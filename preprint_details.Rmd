@@ -1,0 +1,79 @@
+---
+title: "R Notebook"
+---
+
+# Libraries
+
+```{r}
+
+library(tidyverse)
+library(rcrossref)
+
+```
+
+# Retrieve preprint metadata via crossref API
+
+```{r}
+
+# Details of all preprints from bioRxiv and medRxiv on Crossref
+# Crossref member ID of CSHL = 246
+cr_preprints <- cr_types_(types = "posted-content",
+                          works = TRUE, 
+                          filter = c(member = 246,
+                            from_posted_date = "2020-01-01", 
+                            until_posted_date = as.character(Sys.Date())), 
+                          limit = 1000, 
+                          cursor = "*",
+                          parse = TRUE,
+                          cursor_max = 100000)
+
+```
+
+# Parse relevant preprint metadata to a dataframe
+
+```{r}
+
+# Function for parsing posted dates from crossref metadata
+parsePostedDate <- function(item) {
+  if(length(item$posted$`date-parts`[[1]]) == 3) {
+    return(ymd(str_c(item$posted$`date-parts`[[1]][[1]], "-",
+                     item$posted$`date-parts`[[1]][[2]], "-",
+                     item$posted$`date-parts`[[1]][[3]])))
+  } else {
+    return(NA)
+  }
+}
+# Parse relevant fields into dataframe
+parsePreprints <- function(item) {
+  tibble(
+    institution = if(length(item$institution$name)) item$institution$name else NA,
+    doi = item$DOI,
+    title = item$title[[1]],
+    posted_date = parsePostedDate(item),
+    category = item$`group-title`,
+    abstract = if(length(item$abstract)) item$abstract else NA
+  )
+}
+
+# Build a search string containing terms related to COVID-19
+search_string <- "coronavirus|covid-19|sars-cov|ncov-2019|2019-ncov"
+
+# Generate final dataset
+map_dfr(cr_p, function(x) 
+              map_dfr(x$message$items, function(y)
+                                       parsePreprints(y))) %>%
+  # Determine if a preprint is related to COVID-19 or not
+  # Compare numbers to https://connect.biorxiv.org/relate/content/181
+  mutate(covid_preprint = case_when(
+    str_detect(title, regex(search_string, ignore_case = TRUE)) ~ T, 
+    str_detect(abstract, regex(search_string, ignore_case = TRUE)) ~ T,
+    T ~ F
+  )) %>%
+  # Determine source, i.e. bioRxiv or medRxiv
+  mutate(source = case_when(
+    institution == "bioRxiv" ~ "bioRxiv",
+    institution == "medRxiv" ~ "medRxiv")) %>%
+  select(-institution) %>%
+  write_csv("data/preprint_details.csv")
+
+```

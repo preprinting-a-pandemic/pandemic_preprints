@@ -1,0 +1,102 @@
+---
+title: "R Notebook"
+---
+
+# Load libraries
+
+```{r}
+
+library(tidyverse)
+
+```
+
+# Load data
+
+```{r}
+
+preprints <- read_csv("data/preprint_details.csv")
+
+```
+
+# Retrieve data from Altmetric.com
+
+```{r}
+
+# Altmetric API key - set in .Renviron file
+# API key is not strictly necessary but removes rate limits
+api_key <- Sys.getenv("ALTMETRIC_API_KEY")
+
+# API request function
+request <- function(doi){
+  
+  # URL for API call (remove everything after 'doi' if no API key)
+  url <- paste0("http://api.altmetric.com/v1/doi/", doi, "?key=", api_key)
+  
+  # Make request
+  response <- httr::GET(url)
+  
+  # Check for empty response (404)
+  if (response$status_code == 404) { 
+    return()
+  }else{
+    return(response)
+  }
+  
+}
+
+# Get altmetrics data and parse to a dataframe
+getAltmetrics <- function(doi) {
+  
+  response <- request(doi)
+  
+  # If no response, set all counts to 0
+  if(!length(response)){
+    
+    altmetrics_data <- tibble(
+      "doi" = doi,
+      "score" = 0,
+      "twitter" = 0,
+      "facebook" = 0,
+      "blogs" = 0,
+      "news" = 0,
+      "wikipedia" = 0,
+    )
+    
+  } else {
+    
+    # Retrieve data
+    data <- httr::content(response, as="parsed")
+    
+    # Build tibble of results
+    # Where no data exists on a field, we set it to 0
+    altmetrics_data <- tibble(
+      "doi" = doi,
+      "score" = if (length(data$score)) data$score else NA,
+      "twitter" = if (length(data$cited_by_tweeters_count)) data$cited_by_tweeters_count else 0, 
+      "facebook" = if (length(data$cited_by_fbwalls_count)) data$cited_by_fbwalls_count else 0, 
+      "blogs" = if (length(data$cited_by_feeds_count)) data$cited_by_feeds_count else 0,
+      "news" = if (length(data$cited_by_msm_count)) data$cited_by_msm_count else 0,
+      "wikipedia" = if (length(data$cited_by_wikipedia_count)) data$cited_by_wikipedia_count else 0,
+    )
+  
+  }
+  
+  return(altmetrics_data)
+}
+# Retrieve altmetric data for all published articles
+preprint_altmetrics <- map_dfr(preprints$doi, getAltmetrics)
+
+```
+
+# Create final dataset
+
+```{r}
+
+preprint_altmetrics %>%
+  inner_join(preprints, by = "doi") %>%
+  select(source, doi, posted_date, covid_preprint, score:wikipedia) %>%
+  write_csv("data/preprint_altmetrics.csv")
+
+```
+
+

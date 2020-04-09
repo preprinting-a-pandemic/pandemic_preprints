@@ -1,0 +1,90 @@
+---
+title: "R Notebook"
+---
+
+# Libraries
+
+```{r}
+
+library(tidyverse)
+library(lubridate)
+library(rvest)
+library(janitor)
+
+```
+
+# Load data
+
+```{r}
+
+preprints <- read_csv("data/preprint_details.csv")
+
+```
+
+# Retrieve usage data for preprints
+
+```{r}
+
+# Scrape the bioRxiv and medRxiv websites for usage stats
+getUsageData <- function(source, doi) {
+  
+  if(source == "bioRxiv") {
+    base_url = "https://www.biorxiv.org/content/"
+  } else {
+    base_url = "https://www.medrxiv.org/content/"
+  }
+  
+  url <- paste0(base_url, doi, "v1.article-metrics")
+  
+  html <- read_html(url)
+  
+  data <- html %>%
+    html_nodes(".highwire-stats") %>% 
+    html_table(fill = TRUE) %>% .[[1]] %>%
+    rename(date = 1) %>%
+    mutate(source = source,
+           doi = doi) %>%
+    janitor::clean_names()
+  
+  print(doi)
+  
+  return(data)
+  
+}
+
+# Retrieve usage data. Sometimes the bioRxix/medRxiv websites time out and
+# return an invalid response. So we conduct the iteration with purrr::safely
+# to prevent errors interrupting the process
+getUsageDataSafely <- safely(getUsageData)
+usage_data <- map2(preprints$source, preprints$doi, 
+                   function(x, y) getUsageDataSafely(x, y))
+
+```
+
+# Create final dataset
+
+```{r}
+
+# Parse the response returned by the 'safely' function
+parseUsageData <- function(item) {
+  if(item["error"] == "") {
+    return()
+  } else {
+    return(item$result)
+  }
+}
+
+map_dfr(usage_data, parseUsageData) %>%
+  rename(abstract_views = abstract,
+         full_text_views = full,
+         pdf_downloads = pdf,
+         collection_date = date) %>%
+  inner_join(preprints, by = c("doi", "source")) %>%
+  select(source, doi, posted_date, covid_preprint, collection_date, 
+         abstract_views, full_text_views, pdf_downloads) %>%
+  write_csv("data/preprint_usage.csv")
+
+```
+
+
+
