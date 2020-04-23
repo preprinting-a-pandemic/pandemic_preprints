@@ -156,3 +156,12 @@ final <- preprints %>%
   left_join(affiliations, by = "doi")
 
 ```
+
+# Write final dataset to csv
+
+```{r}
+
+write_csv(final, "data/preprint_details.csv")
+
+```
+
