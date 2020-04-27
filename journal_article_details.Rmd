@@ -6,7 +6,6 @@ title: "R Notebook"
 
 library(tidyverse)
 library(rdimensions) # in development: https://github.com/nicholasmfraser/rdimensions
-library(lubridate)
 library(rcrossref)
 
 # Retrieve auth token for dimensions
@@ -89,7 +88,7 @@ dim_items <- dim_data %>%
              by = "doi") %>%
   # select relevant fields
   select(doi, created, title, journal, publisher, oa_category, times_cited) %>%
-  mutate(case_when(
+  mutate(oa_category = case_when(
     oa_category == "oa_all" ~ "oa",
     T ~ "closed"
   )) %>%
