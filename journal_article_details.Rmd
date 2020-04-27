@@ -1,0 +1,109 @@
+---
+title: "R Notebook"
+---
+
+```{r}
+
+library(tidyverse)
+library(rdimensions) # in development: https://github.com/nicholasmfraser/rdimensions
+library(lubridate)
+library(rcrossref)
+
+# Retrieve auth token for dimensions
+dimensions_login()
+
+```
+
+# Retrieve journal article data from Dimensions
+
+```{r}
+
+# Generate the dimensions query string
+dim_q <- '"(\\"coronavirus\\" || \\"covid-19\\" ||\\"sars-cov\\" ||\\"ncov-2019\\" || \\"2019-ncov\\" || \\"hcov-19\\" || \\"sars-2\\")"'
+
+# Determine how many total results we can expect
+search_string <- paste0('search publications for ', dim_q, ' where year=2020 return publications')
+results <- dimensions_query(search_string)$`_stats`$total_count
+
+# Function for querying dimensions API and returning publication data
+getDimensionsData <- function(i) {
+  search_string <- paste0('search publications for ', dim_q, 
+    ' where year=2020 return publications[doi+type+year+title+times_cited+open_access_categories+journal+date+publisher] limit 1000 skip ', (i-1)*1000)
+  data <- dimensions_query(search_string)$publications
+  return(data)
+}
+
+# Calculate number of query iterations required (results per page = 1000)
+iterations <- ceiling(results/1000)
+
+# Parse Dimensions data to a data frame
+parseDimensionsData <- function(item) {
+  tibble(
+    doi = if(length(item$doi)) item$doi else NA,
+    type = item$type,
+    year = item$year,
+    title = item$title,
+    journal = if(length(item$journal$title)) item$journal$title[[1]] else NA,
+    times_cited = item$times_cited,
+    published_date = item$date,
+    publisher = if(length(item$publisher)) item$publisher else NA,
+    oa_category = item$open_access_categories[[1]]$id
+  )
+}
+
+preprints <- read_csv("data/preprint_details.csv") %>%
+  mutate(doi = str_trim(str_to_lower(doi)))
+
+# Retrieve data
+dim_data <- map(1:iterations, getDimensionsData) %>%
+  map_dfr(., ~ map_dfr(., parseDimensionsData)) %>%
+  # clean doi for matching
+  mutate(doi = str_trim(str_to_lower(doi))) %>%
+  # Keep only "article" types, remove any articles that are contained in our 
+  # dataset of preprints (some get mislabelled as "articles" by Dimensions)
+  filter(type == "article",
+         !doi %in% preprints$doi) %>%
+  distinct()
+
+```
+
+# Add publication dates from Crossref
+
+```{r}
+
+# Dimensions provides a field "date" which can be used for publication dates,
+# but there appear to be a number of inaccuracies, e.g. >1000 papers with publication
+# dates on 2020-01-01. Instead we can use Crossref to return more accurate dates
+# using the "created" parameter.
+
+cr_data <- cr_works(dois = dim_data %>% pull(doi))$data %>% distinct()
+
+sampling_date <- "2020-04-30"
+
+# Create final dataset
+dim_items <- dim_data %>%
+  inner_join(cr_data %>% 
+               select(doi, created) %>%
+               # clean doi for matching
+               mutate(doi = str_trim(str_to_lower(doi))),
+             by = "doi") %>%
+  # select relevant fields
+  select(doi, created, title, journal, publisher, oa_category, times_cited) %>%
+  mutate(case_when(
+    oa_category == "oa_all" ~ "oa",
+    T ~ "closed"
+  )) %>%
+  filter(created <= sampling_date) %>%
+  distinct()
+
+```
+
+# Write to csv
+
+```{r}
+
+dim_items %>%
+  write_csv("data/journal_article_details.csv")
+
+```
+
