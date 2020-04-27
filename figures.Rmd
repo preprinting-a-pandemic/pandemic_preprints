@@ -7,6 +7,7 @@ title: "R Notebook"
 ```{r}
 
 library(tidyverse)
+library(magrittr)
 library(lubridate)
 library(patchwork) # for creating nice plot grids
 
@@ -18,14 +19,14 @@ library(patchwork) # for creating nice plot grids
 
 # Spruce up the default figure formatting
 theme_set(theme_minimal() +
-          theme(text = element_text(size = 12),
-                axis.title.x = element_text(margin = margin(20, 0, 0, 0)),
-                axis.title.y = element_text(margin = margin(0, 20, 0, 0)),
-                legend.key.size = unit(0.5, "cm"),
-                legend.text = element_text(size = 10),
-                panel.border = element_rect(color = "#E0E0E0", size = 0.5, fill = NA),
-                strip.background = element_rect(fill = "#FAFAFA", color = "#E0E0E0"),
-                panel.spacing = unit(2, "lines")))
+            theme(text = element_text(size = 12),
+                  axis.title.x = element_text(margin = margin(20, 0, 0, 0)),
+                  axis.title.y = element_text(margin = margin(0, 20, 0, 0)),
+                  legend.key.size = unit(0.5, "cm"),
+                  legend.text = element_text(size = 10),
+                  panel.border = element_rect(color = "#E0E0E0", size = 0.5, fill = NA),
+                  strip.background = element_rect(fill = "#FAFAFA", color = "#E0E0E0"),
+                  panel.spacing = unit(2, "lines")))
 
 # Create custom date scale
 sample_date <- "2020-04-06"
@@ -84,7 +85,10 @@ covid <- read_csv("https://raw.githubusercontent.com/datasets/covid-19/master/da
 preprints <- read_csv("data/preprint_details.csv")
 preprint_usage <- read_csv("data/preprint_usage.csv")
 preprint_altmetrics <- read_csv("data/preprint_altmetrics.csv")
+preprint_timing <- read_csv("data/preprint_earliest_per_country.csv")
 
+# Load previous citation counts fetched?
+load_prev_citations <- TRUE
 ```
 
 # Development of COVID-19 and preprints over time
@@ -225,5 +229,173 @@ p1 + p2 + plot_layout(ncol = 1) +
 
 ```
 
+# Timing of first preprint and first case per country 
 
+```{r}
 
+# Prepare data
+mindate <- min(case_author_dates_df$first_preprint, na.rm=TRUE)
+maxdate <- max(case_author_dates_df$first_preprint, na.rm=TRUE)
+
+# Plot timing
+# Maybe scale pointsize by total cases?
+g1 <- preprint_timing %>% 
+  mutate(continent = countrycode::countrycode(institution_match_country_code, origin = 'iso2c', destination = 'continent')) %>% 
+  filter(!is.na(first_preprint) & !is.na(first_case)) %>%
+  ggplot(aes(x = first_case, y = first_preprint, label1 = institution_match_country_name, label2 = lag)) +
+  geom_polygon(data = data.frame(x = c(mindate, mindate, maxdate), y = c(mindate, maxdate, maxdate)), aes(x=x, y=y, label1=NULL, label2=NULL), fill = "red", alpha=0.05) +
+  geom_polygon(data = data.frame(x = c(mindate, maxdate, maxdate), y = c(mindate, mindate, maxdate)), aes(x=x, y=y, label1=NULL, label2=NULL), fill = "dodgerblue", alpha=0.05) +
+  geom_point(aes(color = continent)) +
+  xlab("Date of first confirmed case") +
+  ylab('Date of first preprint authorship') +
+  scale_x_date(limits = c(mindate, maxdate), expand = c(0, 0)) +
+  scale_y_date(limits = c(mindate, maxdate), expand = c(0, 0)) +
+  geom_abline(intercept = 0, slope = 1, color="grey50", lty="dashed", alpha=0.5) +
+  ggsave("outputs/figures/partials/preprint_case_to_preprint_scatter.png", width = 10, height = 5)
+
+# Save interactive plot version
+htmlwidgets::saveWidget(plotly::as_widget(htmlwidgets::onRender(
+  plotly::ggplotly(g1), "function(el, x) {
+                el.on('plotly_click', function(d) {
+                var url = d.points[0].customdata;
+                //url
+                window.open(url);
+                });
+                }"
+)), 
+paste0("C:\\Users\\Liam\\Documents\\GitHub\\pandemic_preprints\\outputs\\figures\\partials\\preprint_case_to_preprint_scatter.html"), 
+title = paste0("Preprint timing relative to first case"))
+
+# Plot histogram of lag
+g2 <- preprint_timing %>%
+  ggplot(aes(x=lag)) +
+  geom_histogram(bins=30) +
+  scale_x_continuous(breaks=seq(-60, 80, 20), limits = c(-60, 80)) +
+  xlab("Days from first case until first preprint") +
+  ylab("Frequency") +
+  ggsave("outputs/figures/partials/preprint_case_to_preprint_hist.png", width = 10, height = 5)
+```
+
+# Time until publication
+
+```{r}
+
+# Prepare data
+
+# Identify proportion of preprints that are published
+preprints %>% filter(source == "biorxiv") %>% with(table(covid_preprint, is_published)) %>% prop.table(margin = 1)*100 %>% round(3)
+preprints %>% filter(source == "medrxiv") %>% with(table(covid_preprint, is_published)) %>% prop.table(margin = 1)*100 %>% round(3)
+
+# Calculate time to publishing
+preprints %<>% mutate(time_to_publish = as.Date(published_date) - as.Date(posted_date))
+
+# Identify any preprints published before or at same time as preprint upload
+publish_before_preprint <- preprints %>% filter(time_to_publish <= 0)
+
+# Identify publishers with at least 10 published preprints across entire dataset
+publisher_list <- preprints %>% pull(published_publisher) %>% table %>% as.data.frame %>% arrange(Freq) %>% filter(Freq > 10) %>% pull(".")
+
+# Plot density of time to publishing for COVID-19/non-COVID-19 preprints by server
+g1 <- preprints %>% 
+  mutate(covid_preprint = case_when(
+    covid_preprint == T ~ "COVID-19 preprints",
+    covid_preprint == F ~ "non-COVID-19 preprints")
+  ) %>%
+  filter(time_to_publish > 0) %>%
+  ggplot(aes(x=time_to_publish, fill=covid_preprint, color=covid_preprint)) +
+  geom_density(alpha=0.6) +
+  #  scale_x_continuous(breaks=seq(-60, 80, 20), limits = c(-60, 80)) +
+  facet_wrap(source ~ ., nrow = 2, strip.position = "right") +
+  xlab("Time from preprint posting to publication (days)") +
+  ylab("Density") +
+  scale_color_manual(values = c(palette("deep orange"), palette("blue grey"))) +
+  scale_fill_manual(values = c(palette("deep orange"), palette("blue grey"))) +
+  theme(legend.title = element_blank()) +
+  ggsave("outputs/figures/partials/preprint_publishing_time_all.png", width = 10, height = 6)
+
+# Plot boxes of time to publishing for COVID-19/non-COVID-19 preprints by server & publisher
+g2 <- preprints %>% 
+  mutate(covid_preprint = case_when(
+    covid_preprint == T ~ "COVID-19 preprints",
+    covid_preprint == F ~ "non-COVID-19 preprints")
+  ) %>%
+  filter(time_to_publish > 0 & published_publisher %in% publisher_list) %>%
+  ggplot(aes(x = published_publisher, y = time_to_publish, color = covid_preprint)) +
+  geom_boxplot(outlier.shape = NA) +
+  geom_jitter(aes(fill = factor(covid_preprint)),
+              shape = 21, size = 1, alpha = 0.2,
+              position = position_jitterdodge(jitter.width = 0.5)) + 
+  labs(x = "Publisher", y = "Time from preprint posting to publication (days)", 
+       fill = "", color = "") +
+  scale_color_manual(values = c(palette("deep orange"), palette("grey"))) +
+  scale_fill_manual(values = c(palette("deep orange"), palette("grey"))) +
+  scale_x_discrete(label=abbreviate) +
+  facet_wrap(source ~ ., nrow = 2, strip.position = "right") +
+  ggsave("outputs/figures/partials/preprint_publishing_time_server.png", width = 10, height = 8)
+```
+
+# Citation counts
+```{r}
+
+# Prepare data
+
+# Extract citation counts for all preprint and published dois using CrossRef API
+if (load_prev_citations == TRUE){
+  load(file="data\\citations.RData")
+} else {
+  preprint_citation_lookup <- preprints %>% pull(doi) %>% cr_citation_count %>% rename(preprint_citations = count)
+  published_citation_lookup <- preprints %>% filter(!is.na(published_doi)) %>% pull(published_doi) %>% cr_citation_count %>% rename(published_citations = count, published_doi = doi)
+  save(preprint_citation_lookup, published_citation_lookup, file="data\\citations.RData")
+}
+
+# Append to list of preprints
+preprints %<>%
+  left_join(preprint_citation_lookup, by = "doi") %>%
+  left_join(published_citation_lookup, by = "published_doi") %>% 
+  replace_na(list(preprint_citations = 0, published_citations = 0)) %>%
+  mutate(total_citations = preprint_citations + published_citations)
+
+# Plot total citations 
+g1 <- preprints %>% 
+  mutate(covid_preprint = case_when(
+    covid_preprint == T ~ "COVID-19 preprints",
+    covid_preprint == F ~ "non-COVID-19 preprints")
+  ) %>%
+  ggplot(aes(x = covid_preprint, y = total_citations, color = covid_preprint)) +
+  geom_boxplot(outlier.shape = NA) +
+  geom_jitter(aes(fill = factor(covid_preprint)),
+              shape = 21, size = 1, alpha = 0.2,
+              position = position_jitterdodge(jitter.width = 0.5)) + 
+  labs(x = "", y = "Citations (log scale)", 
+       fill = "", color = "") +
+  scale_y_continuous(trans='log10') +
+  scale_color_manual(values = c(palette("deep orange"), palette("grey"))) +
+  scale_fill_manual(values = c(palette("deep orange"), palette("grey"))) +
+  facet_wrap(source ~ ., nrow = 2, strip.position = "right") +
+  guides(color = FALSE, fill = FALSE) +
+  ggsave("outputs/figures/partials/preprint_citations_total.png", width = 5, height = 6)
+
+# Plot individual preprint/published citations 
+g2 <- preprints %>% 
+  mutate(covid_preprint = case_when(
+    covid_preprint == T ~ "COVID-19",
+    covid_preprint == F ~ "non-COVID-19")
+  ) %>% select(doi, covid_preprint, source, preprint_citations, published_citations) %>%
+  gather(type, count, -doi, -covid_preprint, -source) %>%
+  mutate(type = case_when(
+    type == "preprint_citations" ~ "Preprint",
+    type == "published_citations" ~ "Publication")) %>%
+  ggplot(aes(x = type, y = count, color = covid_preprint)) +
+  geom_boxplot(outlier.shape = NA) +
+  geom_jitter(aes(fill = factor(covid_preprint)),
+              shape = 21, size = 1, alpha = 0.2,
+              position = position_jitterdodge(jitter.width = 0.5)) + 
+  labs(x = "Article version", y = "Citations (log scale)", 
+       fill = "", color = "") +
+  scale_y_continuous(trans='log10') +
+  scale_color_manual(values = c(palette("deep orange"), palette("grey"))) +
+  scale_fill_manual(values = c(palette("deep orange"), palette("grey"))) +
+  facet_wrap(source ~ ., nrow = 2, strip.position = "right") +
+  ggsave("outputs/figures/partials/preprint_citations_split.png", width = 10, height = 8)
+
+```

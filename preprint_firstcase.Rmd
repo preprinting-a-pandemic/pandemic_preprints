@@ -1,0 +1,118 @@
+---
+title: "R Notebook"
+---
+
+# Load libraries
+
+```{r}
+
+library(tidyverse)
+library(magrittr)
+
+```
+
+# Load data
+
+```{r}
+
+preprints <- read_csv("data/preprint_details.csv")
+
+# Read in Johns Hopkins global case time series data (reference: Dong E, Du H, Gardner L. An interactive web-based dashboard to track COVID-19 in real time. Lancet Infect Dis)
+
+global_cases <- read.csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv")
+
+```
+
+# Calculate first preprint, first case per country
+
+```{r}
+
+# Set minimum ROR API affiliation matching score acceptable in matching author affiliations
+score_threshold <- 0.9
+
+# Identify date of first confirmed case per country
+global_cases %<>% 
+  mutate(Country.Region = case_when(Province.State == "Guadeloupe" ~ "Guadeloupe", TRUE ~ as.character(Country.Region))) %>% # Overwrite Guadeloupe as a country to match preprint author data
+  select(-c(Province.State, Lat, Long)) %>%
+  gather(date, value, -Country.Region) %>%
+  mutate(date = as.Date(date, format = "X%m.%d.%y"), country_code = countrycode::countrycode(Country.Region, origin = 'country.name', destination = 'iso2c')) %>%
+  group_by(Country.Region, country_code) %>%
+  filter(value != 0) %>%
+  summarise(first_case = min(date))
+
+# Identify date of first preprint per country and merge with first case, calculate time difference between them
+case_author_dates_df <- preprints %>% 
+  filter(covid_preprint == TRUE & institution_match_score >= score_threshold) %>%
+  select(doi, starts_with("institution"), posted_date) %>%
+  mutate(posted_date = as.Date(posted_date)) %>%
+  group_by(institution_match_country_name, institution_match_country_code) %>%
+  slice(which.min(posted_date)) %>%
+  rename(first_preprint = posted_date) %>% 
+  ungroup %>%
+  full_join(global_cases, by = c("institution_match_country_code" = "country_code")) %>%
+  mutate(lag = first_preprint - first_case, threshold = score_threshold)
+
+# Write interim csv for manual affiliation verification
+write_csv(case_author_dates_df, "data\\preprint_earliest_per_country.csv")
+
+# Define mis-affiliated entries from manual inspection, 24/4/20, with score_threshold = 0.9
+misdefined <- c("AL","BY","KH","CZ","GH","IN","IE","KZ","LB","MX","NI","QA","CG","RW","SK","LK","UG","VE")
+
+no_preprints <- case_author_dates_df %>% filter(is.na(first_preprint)) %>% select(Country.Region) # Identify countries/territories with no associated corresponding authors of COVID-19 papers
+no_cases <- case_author_dates_df %>% filter(is.na(first_case)) %>% select(institution_match_country_name) # Identify countries/territories without case data for COVID-19
+```
+
+# Check sensitivity to thresholding
+
+```{r}
+
+case_author_dates_sens <- NULL
+n_countries <- NULL
+
+for (score_threshold in c(0.4,0.6,0.8,0.9,1.0)){
+  
+  df <- preprints %>% 
+    filter(covid_preprint == TRUE & institution_match_score >= score_threshold) %>%
+    select(institution_match_country_name, institution_match_country_code, posted_date) %>%
+    mutate(posted_date = as.Date(posted_date)) %>%
+    group_by(institution_match_country_name, institution_match_country_code) %>%
+    summarise(first_preprint = min(posted_date)) %>%
+    ungroup %>%
+    full_join(global_cases, by = c("institution_match_country_code" = "country_code")) %>%
+    mutate(lag = first_preprint - first_case, threshold = score_threshold)
+  
+  case_author_dates_sens %<>% rbind(df)
+  
+  n_countries <- c(n_countries, df %>% filter(!is.na(first_preprint) & !is.na(first_case)) %>% nrow)
+}
+
+# Show table of countries per threshold
+data.frame(score_threshold = c(0.4, 0.6,0.8,0.9,1.0), n_countries) %>% knitr::kable(.)
+
+# Set dates for plotting
+mindate <- min(case_author_dates_sens$first_preprint, na.rm=TRUE)
+maxdate <- max(case_author_dates_sens$first_preprint, na.rm=TRUE)
+
+# Plot sensitivity
+g_test <- case_author_dates_sens %>% filter(!is.na(first_preprint) & !is.na(first_case)) %>%
+  ggplot(aes(x = first_case, y = first_preprint, label1 = institution_match_country_name, label2 = lag)) +
+  geom_point(aes(color = as.factor(threshold))) +
+  facet_wrap(facets = ~institution_match_country_name) +
+  xlab("Date of first confirmed case") +
+  ylab('Date of first preprint authorship') +
+  scale_x_date(limits = c(mindate, maxdate), expand = c(0, 0)) +
+  scale_y_date(limits = c(mindate, maxdate), expand = c(0, 0)) +
+  geom_abline(intercept = 0, slope = 1, color="grey50", lty="dashed", alpha=0.5) +
+  theme_bw(base_size = 15) + 
+  theme(legend.title = element_blank())
+
+# Identify countries gained by relaxing to lowest threshold and inspect
+country_diff <- case_author_dates_sens %>% filter(threshold == 0.4 & !is.na(institution_match_country_name)) %>% pull(institution_match_country_name) %>% subset(., !(. %in% (case_author_dates_sens %>% filter(threshold == 1) %>% pull(institution_match_country_name))))
+
+preprints %>% 
+  filter(covid_preprint == TRUE & institution_match_country_name %in% country_diff) %>%
+  mutate(posted_date = as.Date(posted_date)) %>%
+  arrange(institution_match_country_name, posted_date)
+
+```
+

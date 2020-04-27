@@ -1,0 +1,188 @@
+doi,institution,institution_match_score,institution_match_type,institution_match_name,institution_match_country_name,institution_match_country_code,first_preprint,Country.Region,first_case,lag,threshold
+10.1101/2020.03.30.20047803,"Institute of Public Health, College of Medicine and Health Sciences,  UAE University, Al Ain, UAE",1,PHRASE,Institute of Public Health,Albania,AL,2020-04-02,Albania,2020-03-09,24,0.9
+10.1101/2020.02.13.20022822,Deakin University,1,PHRASE,Deakin University,Australia,AU,2020-02-18,Australia,2020-01-26,23,0.9
+10.1101/2020.03.31.20048827,IST Austria,1,PHRASE,Institute of Science and Technology Austria,Austria,AT,2020-04-02,Austria,2020-02-25,37,0.9
+10.1101/2020.02.05.935072,Jahangirnagar University,1,PHRASE,Jahangirnagar University,Bangladesh,BD,2020-02-11,Bangladesh,2020-03-08,-26,0.9
+10.1101/2020.03.28.20043059,"CAS Key Laboratory of Pathogenic Microbiology and Immunology, Institute of Microbiology, Center for Influenza Research and Early-warning (CASCIRE), Chinese Acad",1,PHRASE,Institute of Microbiology,Belarus,BY,2020-03-30,Belarus,2020-02-28,31,0.9
+10.1101/2020.03.03.20030627,"Centre for Health Economic Research and Modelling Infectious Diseases,University of Antwerp, Antwerp, Belgium",1,PHRASE,University of Antwerp,Belgium,BE,2020-03-06,Belgium,2020-02-04,31,0.9
+10.1101/2020.04.15.20066308,Botswana International University of Science and Technology,1,PHRASE,Botswana International University of Science and Technology,Botswana,BW,2020-04-18,Botswana,2020-03-30,19,0.9
+10.1101/2020.03.19.20037192,"Instituto de Fisica, Universidade Federal do Rio Grande do Sul, Porto Alegre, RS, Brazil",1,PHRASE,Federal University of Rio Grande do Sul,Brazil,BR,2020-03-23,Brazil,2020-02-26,26,0.9
+10.1101/2020.04.05.20054577,"Sofia University \""Sveti Kliment Ohridski\""",1,HEURISTICS,Sofia University,Bulgaria,BG,2020-04-07,Bulgaria,2020-03-08,30,0.9
+10.1101/2020.02.03.932350,University of Western Ontario,1,HEURISTICS,Western University,Cambodia,KH,2020-02-04,Cambodia,2020-01-27,8,0.9
+10.1101/2020.02.24.20027375,"Department of Medicine, University of Toronto",1,PHRASE,University of Toronto,Canada,CA,2020-02-25,Canada,2020-01-26,30,0.9
+10.1101/2020.03.23.20042002,Universidad de Chile,1,PHRASE,University of Chile,Chile,CL,2020-03-27,Chile,2020-03-03,24,0.9
+10.1101/2020.01.19.911669,Xiamen University,1,PHRASE,Xiamen University,China,CN,2020-01-19,China,2020-01-22,-3,0.9
+10.1101/2020.04.06.20056119,Universidad Nacional de Colombia,1,PHRASE,National University of Colombia,Colombia,CO,2020-04-11,Colombia,2020-03-06,36,0.9
+10.1101/2020.02.17.952903,"Institute of Biophysics, School of Physics, Huazhong University of Science and Technology",1,PHRASE,Institute of Biophysics,Czechia,CZ,2020-02-21,Czechia,2020-03-01,-9,0.9
+10.1101/2020.03.20.000794,"Center for Genomic Medicine, Copenhagen University Hospital, Copenhagen, Denmark and UKBB Universitats-Kinderspital, Department of Biomedicine, Basel, 4031 Base",1,HEURISTICS,University of Copenhagen,Denmark,DK,2020-03-21,Denmark,2020-02-27,23,0.9
+10.1101/2020.04.01.019463,Cairo University,1,PHRASE,Cairo University,Egypt,EG,2020-04-02,Egypt,2020-02-14,48,0.9
+10.1101/2020.04.02.20051052,"Adigrat University, College of Health Sciences",1,PHRASE,Adigrat University,Ethiopia,ET,2020-04-06,Ethiopia,2020-03-13,24,0.9
+10.1101/2020.04.13.038752,"Faculty of Medicine and Health Technology, Tampere University and Fimlab Ltd, Tampere University Hospital, Finland",1,PHRASE,Tampere University Hospital,Finland,FI,2020-04-13,Finland,2020-01-29,75,0.9
+10.1101/2020.02.05.20020792,"INSERM, Paris, France",1,PHRASE,Inserm,France,FR,2020-02-07,France,2020-01-24,14,0.9
+10.1101/2020.01.29.925354,Robert Koch Institute,1,PHRASE,Robert Koch Institute,Germany,DE,2020-01-30,Germany,2020-01-27,3,0.9
+10.1101/2020.01.23.20018549,Lancaster University,1,HEURISTICS,Lancaster University Ghana,Ghana,GH,2020-01-24,Ghana,2020-03-14,-50,0.9
+10.1101/2020.01.26.920249,"Department of Hygiene Epidemiology and Medical Statistics, Medical School, National and Kapodistrian University of Athens, Athens, Greece",1,HEURISTICS,National and Kapodistrian University of Athens,Greece,GR,2020-01-27,Greece,2020-02-26,-30,0.9
+10.1101/2020.04.12.20063008,"CHU POINTE A PITRE, URGENCES SAMU SMUR",0.92,COMMON TERMS,Centre Hospitalier Universitaire Pointe-à-Pitre,Guadeloupe,GP,2020-04-16,Guadeloupe,2020-03-13,34,0.9
+10.1101/2020.02.04.20020503,University of Szeged,1,PHRASE,University of Szeged,Hungary,HU,2020-02-05,Hungary,2020-03-04,-28,0.9
+10.1101/2020.01.21.914044,"State Key Laboratory for Turbulence and Complex Systems, Department of Biomedical Engineering, College of Engineering, and Center for Quantitative Biology, Peki",0.9,PHRASE,Maharaj Vijayaram Gajapathi Raj College of Engineering,India,IN,2020-01-24,India,2020-01-30,-6,0.9
+10.1101/2020.03.05.20031518,"Applied physiology research center, cardiovascular research institute, Isfahan University of Medical Sciences, Isfahan, Iran",1,PHRASE,Isfahan University of Medical Sciences,Iran,IR,2020-03-08,Iran,2020-02-19,18,0.9
+10.1101/2020.03.19.20039008,"Li Ka Shing Research Institute, Knowledge Translation Program, St. Michael\'s Hospital",1,FUZZY,St Michael’s Hospital,Ireland,IE,2020-03-23,Ireland,2020-02-29,23,0.9
+10.1101/2020.03.10.986398,The Hebrew University of Jerusalem,1,PHRASE,Hebrew University of Jerusalem,Israel,IL,2020-03-12,Israel,2020-02-21,20,0.9
+10.1101/2020.01.24.915157,"Unit of Medical Statistics and Molecular Epidemiology, University Campus Bio-Medico of Rome, Italy.",0.96,COMMON TERMS,Università Campus Bio-Medico,Italy,IT,2020-01-24,Italy,2020-01-31,-7,0.9
+10.1101/2020.01.26.20018754,Hokkaido University,1,PHRASE,Hokkaido University,Japan,JP,2020-01-28,Japan,2020-01-22,6,0.9
+10.1101/2020.04.09.20056374,Isra University,1,PHRASE,Isra University,Jordan,JO,2020-04-11,Jordan,2020-03-03,39,0.9
+10.1101/2020.02.07.20021196,"Institute of Zoology, Chinese Academy of Sciences",1,PHRASE,Institute of Zoology,Kazakhstan,KZ,2020-02-11,Kazakhstan,2020-03-13,-31,0.9
+10.1101/2020.03.14.20035964,CNRS,0.9,ACRONYM,National Council for Scientific Research,Lebanon,LB,2020-03-17,Lebanon,2020-02-21,25,0.9
+10.1101/2020.03.17.20037838,Macao Polytechnic Institute,0.96,COMMON TERMS,Macau Polytechnic Institute,Macao,MO,2020-03-20,NA,NA,NA,0.9
+10.1101/2020.02.07.20021188,Universiti Malaysia Sarawak,1,PHRASE,Universiti Malaysia Sarawak,Malaysia,MY,2020-02-11,Malaysia,2020-01-25,17,0.9
+10.1101/2020.03.02.20026708,Northeastern University,1,PHRASE,Universidad del Noreste,Mexico,MX,2020-03-06,Mexico,2020-02-28,7,0.9
+10.1101/2020.01.27.20018986,National Institute for Public Health and the Environment,1,PHRASE,National Institute for Public Health and the Environment,Netherlands,NL,2020-01-28,Netherlands,2020-02-27,-30,0.9
+10.1101/2020.02.07.20021139,Victoria University of Wellington,1,PHRASE,Victoria University of Wellington,New Zealand,NZ,2020-02-11,New Zealand,2020-02-28,-17,0.9
+10.1101/2020.03.21.001933,Universidad de Las Americas-Quito,1,COMMON TERMS,Universidad de las Américas,Nicaragua,NI,2020-03-23,Nicaragua,2020-03-19,4,0.9
+10.1101/2020.03.19.20038794,Nasarawa State University,1,PHRASE,Nasarawa State University,Nigeria,NG,2020-03-24,Nigeria,2020-02-28,25,0.9
+10.1101/2020.04.15.20066068,Macedonian Academy of Sciences and Arts,1,PHRASE,Macedonian Academy of Sciences and Arts,North Macedonia,MK,2020-04-17,North Macedonia,2020-02-26,51,0.9
+10.1101/2020.03.20.20038406,Norwegian Institute of Public Health,1,PHRASE,Norwegian Institute of Public Health,Norway,NO,2020-03-23,Norway,2020-02-26,26,0.9
+10.1101/2020.04.02.20050666,"Sohar University, Oman",1,PHRASE,Sohar University,Oman,OM,2020-04-06,Oman,2020-02-24,42,0.9
+10.1101/2020.03.26.20044636,Dow University of Health Sciences,1,PHRASE,Dow University of Health Sciences,Pakistan,PK,2020-03-31,Pakistan,2020-02-26,34,0.9
+10.1101/2020.03.27.20045336,University of the Philippines Los Banos,1,PHRASE,University of the Philippines Los Baños,Philippines,PH,2020-03-30,Philippines,2020-01-30,60,0.9
+10.1101/2020.03.01.971499,"Malopolska Centre of Biotechnology, Jagiellonian University in Krakow, Poland",1,HEURISTICS,Jagiellonian University,Poland,PL,2020-03-02,Poland,2020-03-04,-2,0.9
+10.1101/2020.02.24.20027268,"Laboratory of Biostatistics and Medical Informatics, Faculty of Medicine, University of Coimbra, Portugal; iCBR - Coimbra Institute for Clinical and Biomedical",1,PHRASE,University of Coimbra,Portugal,PT,2020-02-25,Portugal,2020-03-02,-6,0.9
+10.1101/2020.03.30.20047993,Georgetown University,1,PHRASE,Georgetown University,Qatar,QA,2020-04-01,Qatar,2020-02-29,32,0.9
+10.1101/2020.03.27.20044156,Institut de recherche pour le developpement,1,PHRASE,Institut de Recherche pour le Développement,Republic of the Congo,CG,2020-03-30,Congo (Brazzaville),2020-03-15,15,0.9
+10.1101/2020.04.10.20058222,ITMO University,1,PHRASE,ITMO University,Russia,RU,2020-04-11,Russia,2020-01-31,71,0.9
+10.1101/2020.03.04.20029538,"Key Laboratory of Combinatorial Biosynthesis and Drug Discovery, Ministry of Education and Wuhan University School of Pharmaceutical Sciences",1,PHRASE,Ministry of Education,Rwanda,RW,2020-03-06,Rwanda,2020-03-14,-8,0.9
+10.1101/2020.02.17.952895,King Abdullah University of Science and Technology (KAUST),1,COMMON TERMS,King Abdullah University of Science and Technology,Saudi Arabia,SA,2020-02-21,Saudi Arabia,2020-03-02,-10,0.9
+10.1101/2020.02.17.20024075,National University of Singapore,1,PHRASE,National University of Singapore,Singapore,SG,2020-02-20,Singapore,2020-01-23,28,0.9
+10.1101/2020.03.29.20045880,KWR Water Research Institute,0.92,COMMON TERMS,Water Research Institute,Slovakia,SK,2020-03-30,Slovakia,2020-03-06,24,0.9
+10.1101/2020.02.16.20023606,university of ljubljana,1,PHRASE,University of Ljubljana,Slovenia,SI,2020-02-18,Slovenia,2020-03-05,-16,0.9
+10.1101/2020.01.31.928796,"KwaZulu-Natal Research Innovation and Sequencing Platform (KRISP), University of KwaZulu-Natal",1,PHRASE,University of KwaZulu-Natal,South Africa,ZA,2020-02-02,South Africa,2020-03-05,-32,0.9
+10.1101/2020.01.31.929547,"Department of Microbiology, College of Natural Sciences, Dankook University, Cheonan, Republic of Korea",1,PHRASE,Dankook University,South Korea,KR,2020-02-02,"Korea, South",2020-01-22,11,0.9
+10.1101/2020.03.01.20029801,University of Zaragoza,1,PHRASE,University of Zaragoza,Spain,ES,2020-03-06,Spain,2020-02-01,34,0.9
+10.1101/2020.04.02.20049189,The French National Research Institute for Development (IRD),0.9,ACRONYM,Institute for Research and Development,Sri Lanka,LK,2020-04-06,Sri Lanka,2020-01-27,70,0.9
+10.1101/2020.02.04.934232,"Department of Pharmacy, University of Khartoum, Khartoum, Sudan",1,PHRASE,University of Khartoum,Sudan,SD,2020-02-11,Sudan,2020-03-13,-31,0.9
+10.1101/2020.03.20.20039594,Umea University,1,PHRASE,Umeå University,Sweden,SE,2020-03-23,Sweden,2020-01-31,52,0.9
+10.1101/2020.01.23.917351,"Institute of Social and Preventive Medicine, University of Bern, Bern, Switzerland",1,PHRASE,University of Bern,Switzerland,CH,2020-01-24,Switzerland,2020-02-25,-32,0.9
+10.1101/2020.02.21.960492,National Pingtung University of Science and Technology,1,PHRASE,National Pingtung University of Science and Technology,Taiwan,TW,2020-02-23,Taiwan*,2020-01-22,32,0.9
+10.1101/2020.04.15.20066845,Ifakara Health Institute,1,PHRASE,Ifakara Health Institute,Tanzania,TZ,2020-04-20,Tanzania,2020-03-16,35,0.9
+10.1101/2020.03.28.20044339,"College of Graduate Studies, Walailak University, Nakhon Si Thammarat, 80160, Thailand",1,PHRASE,Walailak University,Thailand,TH,2020-03-31,Thailand,2020-01-22,69,0.9
+10.1101/2020.04.15.20065532,"BIMS Laboratory, LR16IPT09, Institute Pasteur of Tunisia, University of Tunis El Manar, Tunisia",1,HEURISTICS,Tunis University,Tunisia,TN,2020-04-17,Tunisia,2020-03-04,44,0.9
+10.1101/2020.03.15.992438,Abdullah Gul University,1,PHRASE,Abdullah Gül University,Turkey,TR,2020-03-17,Turkey,2020-03-11,6,0.9
+10.1101/2020.02.26.20028431,University of Victoria,1,HEURISTICS,Victoria University,Uganda,UG,2020-03-01,Uganda,2020-03-21,-20,0.9
+10.1101/2020.04.07.20056994,National Aviation University,1,PHRASE,National Aviation University,Ukraine,UA,2020-04-10,Ukraine,2020-03-03,38,0.9
+10.1101/2020.03.09.20033381,"Ph.D student, Institute of Public Health, College of Medicine and Health Sciences, United Arab Emirates University, Al Ain, UAE",1,PHRASE,United Arab Emirates University,United Arab Emirates,AE,2020-03-13,United Arab Emirates,2020-01-29,44,0.9
+10.1101/2020.01.24.919159,University of Oxford,1,PHRASE,University of Oxford,United Kingdom,GB,2020-01-25,United Kingdom,2020-01-31,-6,0.9
+10.1101/2020.01.22.915660,NIH/NIAID,0.9,ACRONYM,National Institutes of Health,United States,US,2020-01-22,US,2020-01-22,0,0.9
+10.1101/2020.03.26.20044693,UCLA,0.9,ACRONYM,Universidad Centroccidental Lisandro Alvarado,Venezuela,VE,2020-03-30,Venezuela,2020-03-14,16,0.9
+10.1101/2020.03.07.20032052,OUCRU-VN,0.9,ACRONYM,Oxford University Clinical Research Unit,Vietnam,VN,2020-03-16,Vietnam,2020-01-23,53,0.9
+NA,NA,NA,NA,NA,NA,AF,NA,Afghanistan,2020-02-24,NA,0.9
+NA,NA,NA,NA,NA,NA,DZ,NA,Algeria,2020-02-25,NA,0.9
+NA,NA,NA,NA,NA,NA,AD,NA,Andorra,2020-03-02,NA,0.9
+NA,NA,NA,NA,NA,NA,AO,NA,Angola,2020-03-20,NA,0.9
+NA,NA,NA,NA,NA,NA,AG,NA,Antigua and Barbuda,2020-03-13,NA,0.9
+NA,NA,NA,NA,NA,NA,AR,NA,Argentina,2020-03-03,NA,0.9
+NA,NA,NA,NA,NA,NA,AM,NA,Armenia,2020-03-01,NA,0.9
+NA,NA,NA,NA,NA,NA,AZ,NA,Azerbaijan,2020-03-01,NA,0.9
+NA,NA,NA,NA,NA,NA,BS,NA,Bahamas,2020-03-16,NA,0.9
+NA,NA,NA,NA,NA,NA,BH,NA,Bahrain,2020-02-24,NA,0.9
+NA,NA,NA,NA,NA,NA,BB,NA,Barbados,2020-03-17,NA,0.9
+NA,NA,NA,NA,NA,NA,BZ,NA,Belize,2020-03-23,NA,0.9
+NA,NA,NA,NA,NA,NA,BJ,NA,Benin,2020-03-16,NA,0.9
+NA,NA,NA,NA,NA,NA,BT,NA,Bhutan,2020-03-06,NA,0.9
+NA,NA,NA,NA,NA,NA,BO,NA,Bolivia,2020-03-11,NA,0.9
+NA,NA,NA,NA,NA,NA,BA,NA,Bosnia and Herzegovina,2020-03-05,NA,0.9
+NA,NA,NA,NA,NA,NA,BN,NA,Brunei,2020-03-09,NA,0.9
+NA,NA,NA,NA,NA,NA,BF,NA,Burkina Faso,2020-03-10,NA,0.9
+NA,NA,NA,NA,NA,NA,MM,NA,Burma,2020-03-27,NA,0.9
+NA,NA,NA,NA,NA,NA,BI,NA,Burundi,2020-03-31,NA,0.9
+NA,NA,NA,NA,NA,NA,CV,NA,Cabo Verde,2020-03-20,NA,0.9
+NA,NA,NA,NA,NA,NA,CM,NA,Cameroon,2020-03-06,NA,0.9
+NA,NA,NA,NA,NA,NA,CF,NA,Central African Republic,2020-03-15,NA,0.9
+NA,NA,NA,NA,NA,NA,TD,NA,Chad,2020-03-19,NA,0.9
+NA,NA,NA,NA,NA,NA,CD,NA,Congo (Kinshasa),2020-03-11,NA,0.9
+NA,NA,NA,NA,NA,NA,CR,NA,Costa Rica,2020-03-06,NA,0.9
+NA,NA,NA,NA,NA,NA,CI,NA,Cote d'Ivoire,2020-03-11,NA,0.9
+NA,NA,NA,NA,NA,NA,HR,NA,Croatia,2020-02-25,NA,0.9
+NA,NA,NA,NA,NA,NA,CU,NA,Cuba,2020-03-12,NA,0.9
+NA,NA,NA,NA,NA,NA,CY,NA,Cyprus,2020-03-09,NA,0.9
+NA,NA,NA,NA,NA,NA,NA,NA,Diamond Princess,2020-02-07,NA,0.9
+NA,NA,NA,NA,NA,NA,DJ,NA,Djibouti,2020-03-18,NA,0.9
+NA,NA,NA,NA,NA,NA,DM,NA,Dominica,2020-03-22,NA,0.9
+NA,NA,NA,NA,NA,NA,DO,NA,Dominican Republic,2020-03-01,NA,0.9
+NA,NA,NA,NA,NA,NA,EC,NA,Ecuador,2020-03-01,NA,0.9
+NA,NA,NA,NA,NA,NA,SV,NA,El Salvador,2020-03-19,NA,0.9
+NA,NA,NA,NA,NA,NA,GQ,NA,Equatorial Guinea,2020-03-15,NA,0.9
+NA,NA,NA,NA,NA,NA,ER,NA,Eritrea,2020-03-21,NA,0.9
+NA,NA,NA,NA,NA,NA,EE,NA,Estonia,2020-02-27,NA,0.9
+NA,NA,NA,NA,NA,NA,SZ,NA,Eswatini,2020-03-14,NA,0.9
+NA,NA,NA,NA,NA,NA,FJ,NA,Fiji,2020-03-19,NA,0.9
+NA,NA,NA,NA,NA,NA,GA,NA,Gabon,2020-03-14,NA,0.9
+NA,NA,NA,NA,NA,NA,GM,NA,Gambia,2020-03-17,NA,0.9
+NA,NA,NA,NA,NA,NA,GE,NA,Georgia,2020-02-26,NA,0.9
+NA,NA,NA,NA,NA,NA,GD,NA,Grenada,2020-03-22,NA,0.9
+NA,NA,NA,NA,NA,NA,GT,NA,Guatemala,2020-03-14,NA,0.9
+NA,NA,NA,NA,NA,NA,GN,NA,Guinea,2020-03-13,NA,0.9
+NA,NA,NA,NA,NA,NA,GW,NA,Guinea-Bissau,2020-03-25,NA,0.9
+NA,NA,NA,NA,NA,NA,GY,NA,Guyana,2020-03-12,NA,0.9
+NA,NA,NA,NA,NA,NA,HT,NA,Haiti,2020-03-20,NA,0.9
+NA,NA,NA,NA,NA,NA,VA,NA,Holy See,2020-03-06,NA,0.9
+NA,NA,NA,NA,NA,NA,HN,NA,Honduras,2020-03-11,NA,0.9
+NA,NA,NA,NA,NA,NA,IS,NA,Iceland,2020-02-28,NA,0.9
+NA,NA,NA,NA,NA,NA,ID,NA,Indonesia,2020-03-02,NA,0.9
+NA,NA,NA,NA,NA,NA,IQ,NA,Iraq,2020-02-24,NA,0.9
+NA,NA,NA,NA,NA,NA,JM,NA,Jamaica,2020-03-11,NA,0.9
+NA,NA,NA,NA,NA,NA,KE,NA,Kenya,2020-03-13,NA,0.9
+NA,NA,NA,NA,NA,NA,NA,NA,Kosovo,2020-03-26,NA,0.9
+NA,NA,NA,NA,NA,NA,KW,NA,Kuwait,2020-02-24,NA,0.9
+NA,NA,NA,NA,NA,NA,KG,NA,Kyrgyzstan,2020-03-18,NA,0.9
+NA,NA,NA,NA,NA,NA,LA,NA,Laos,2020-03-24,NA,0.9
+NA,NA,NA,NA,NA,NA,LV,NA,Latvia,2020-03-02,NA,0.9
+NA,NA,NA,NA,NA,NA,LR,NA,Liberia,2020-03-16,NA,0.9
+NA,NA,NA,NA,NA,NA,LY,NA,Libya,2020-03-24,NA,0.9
+NA,NA,NA,NA,NA,NA,LI,NA,Liechtenstein,2020-03-04,NA,0.9
+NA,NA,NA,NA,NA,NA,LT,NA,Lithuania,2020-02-28,NA,0.9
+NA,NA,NA,NA,NA,NA,LU,NA,Luxembourg,2020-02-29,NA,0.9
+NA,NA,NA,NA,NA,NA,MG,NA,Madagascar,2020-03-20,NA,0.9
+NA,NA,NA,NA,NA,NA,MW,NA,Malawi,2020-04-02,NA,0.9
+NA,NA,NA,NA,NA,NA,MV,NA,Maldives,2020-03-08,NA,0.9
+NA,NA,NA,NA,NA,NA,ML,NA,Mali,2020-03-25,NA,0.9
+NA,NA,NA,NA,NA,NA,MT,NA,Malta,2020-03-07,NA,0.9
+NA,NA,NA,NA,NA,NA,MR,NA,Mauritania,2020-03-14,NA,0.9
+NA,NA,NA,NA,NA,NA,MU,NA,Mauritius,2020-03-18,NA,0.9
+NA,NA,NA,NA,NA,NA,MD,NA,Moldova,2020-03-08,NA,0.9
+NA,NA,NA,NA,NA,NA,MC,NA,Monaco,2020-02-29,NA,0.9
+NA,NA,NA,NA,NA,NA,MN,NA,Mongolia,2020-03-10,NA,0.9
+NA,NA,NA,NA,NA,NA,ME,NA,Montenegro,2020-03-17,NA,0.9
+NA,NA,NA,NA,NA,NA,MA,NA,Morocco,2020-03-02,NA,0.9
+NA,NA,NA,NA,NA,NA,MZ,NA,Mozambique,2020-03-22,NA,0.9
+NA,NA,NA,NA,NA,NA,NA,NA,MS Zaandam,2020-03-28,NA,0.9
+NA,NA,NA,NA,NA,NA,"NA",NA,Namibia,2020-03-14,NA,0.9
+NA,NA,NA,NA,NA,NA,NP,NA,Nepal,2020-01-25,NA,0.9
+NA,NA,NA,NA,NA,NA,NE,NA,Niger,2020-03-20,NA,0.9
+NA,NA,NA,NA,NA,NA,PA,NA,Panama,2020-03-10,NA,0.9
+NA,NA,NA,NA,NA,NA,PG,NA,Papua New Guinea,2020-03-20,NA,0.9
+NA,NA,NA,NA,NA,NA,PY,NA,Paraguay,2020-03-08,NA,0.9
+NA,NA,NA,NA,NA,NA,PE,NA,Peru,2020-03-06,NA,0.9
+NA,NA,NA,NA,NA,NA,RO,NA,Romania,2020-02-26,NA,0.9
+NA,NA,NA,NA,NA,NA,KN,NA,Saint Kitts and Nevis,2020-03-25,NA,0.9
+NA,NA,NA,NA,NA,NA,LC,NA,Saint Lucia,2020-03-14,NA,0.9
+NA,NA,NA,NA,NA,NA,VC,NA,Saint Vincent and the Grenadines,2020-03-14,NA,0.9
+NA,NA,NA,NA,NA,NA,SM,NA,San Marino,2020-02-27,NA,0.9
+NA,NA,NA,NA,NA,NA,ST,NA,Sao Tome and Principe,2020-04-06,NA,0.9
+NA,NA,NA,NA,NA,NA,SN,NA,Senegal,2020-03-02,NA,0.9
+NA,NA,NA,NA,NA,NA,RS,NA,Serbia,2020-03-06,NA,0.9
+NA,NA,NA,NA,NA,NA,SC,NA,Seychelles,2020-03-14,NA,0.9
+NA,NA,NA,NA,NA,NA,SL,NA,Sierra Leone,2020-03-31,NA,0.9
+NA,NA,NA,NA,NA,NA,SO,NA,Somalia,2020-03-16,NA,0.9
+NA,NA,NA,NA,NA,NA,SS,NA,South Sudan,2020-04-05,NA,0.9
+NA,NA,NA,NA,NA,NA,SR,NA,Suriname,2020-03-14,NA,0.9
+NA,NA,NA,NA,NA,NA,SY,NA,Syria,2020-03-22,NA,0.9
+NA,NA,NA,NA,NA,NA,TL,NA,Timor-Leste,2020-03-22,NA,0.9
+NA,NA,NA,NA,NA,NA,TG,NA,Togo,2020-03-06,NA,0.9
+NA,NA,NA,NA,NA,NA,TT,NA,Trinidad and Tobago,2020-03-14,NA,0.9
+NA,NA,NA,NA,NA,NA,UY,NA,Uruguay,2020-03-14,NA,0.9
+NA,NA,NA,NA,NA,NA,UZ,NA,Uzbekistan,2020-03-15,NA,0.9
+NA,NA,NA,NA,NA,NA,PS,NA,West Bank and Gaza,2020-03-05,NA,0.9
+NA,NA,NA,NA,NA,NA,EH,NA,Western Sahara,2020-04-05,NA,0.9
+NA,NA,NA,NA,NA,NA,YE,NA,Yemen,2020-04-10,NA,0.9
+NA,NA,NA,NA,NA,NA,ZM,NA,Zambia,2020-03-18,NA,0.9
+NA,NA,NA,NA,NA,NA,ZW,NA,Zimbabwe,2020-03-20,NA,0.9

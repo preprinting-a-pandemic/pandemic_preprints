@@ -2,3 +2,6 @@
 .Rhistory
 .RData
 .Ruserdata
+data/preprint_tweets.csv
+outputs/figures/partials/preprint_case_to_preprint_scatter_files
+
