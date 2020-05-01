@@ -14,11 +14,11 @@ library(tidyverse)
 
 ```{r}
 
-preprints <- read_csv("data/preprint_details.csv")
+preprints <- read_csv("data/preprints_full_20190901_20200430.csv")
 
 ```
 
-# Retrieve data from Altmetric.com
+# Counts data
 
 ```{r}
 
@@ -60,6 +60,7 @@ getAltmetrics <- function(doi) {
       "blogs" = 0,
       "news" = 0,
       "wikipedia" = 0,
+      "policies" = 0
     )
     
   } else {
@@ -77,14 +78,39 @@ getAltmetrics <- function(doi) {
       "blogs" = if (length(data$cited_by_feeds_count)) data$cited_by_feeds_count else 0,
       "news" = if (length(data$cited_by_msm_count)) data$cited_by_msm_count else 0,
       "wikipedia" = if (length(data$cited_by_wikipedia_count)) data$cited_by_wikipedia_count else 0,
+      "policies" = if (length(data$cited_by_policies_count)) data$cited_by_policies_count else 0
     )
   
   }
   
+  # update progress bar
+  pb$tick()$print()
+  
   return(altmetrics_data)
 }
+
+# Retrieve altmetric data for all preprints
+pb <- progress_estimated(length(preprints$doi))
+preprint_altmetric_counts <- map_dfr(preprints$doi, getAltmetrics) %>%
+  mutate(doi = str_trim(str_to_lower(doi)))
+
 # Retrieve altmetric data for all published articles
-preprint_altmetrics <- map_dfr(preprints$doi, getAltmetrics)
+published_dois <- preprints %>% 
+  filter(!is.na(published_doi)) %>% 
+  pull(published_doi)
+pb <- progress_estimated(length(published_dois))
+published_altmetric_counts <- map_dfr(published_dois, getAltmetrics) %>%
+  rename(
+    published_doi = doi,
+    published_score = score,
+    published_twitter = twitter,
+    published_facebook = facebook,
+    published_blogs = blogs,
+    published_news = news,
+    published_wikipedia = wikipedia,
+    published_policies = polices
+  ) %>%
+  mutate(published_doi = str_trim(str_to_lower(published_doi)))
 
 ```
 
@@ -92,10 +118,107 @@ preprint_altmetrics <- map_dfr(preprints$doi, getAltmetrics)
 
 ```{r}
 
-preprint_altmetrics %>%
-  inner_join(preprints, by = "doi") %>%
-  select(source, doi, posted_date, covid_preprint, score:wikipedia) %>%
-  write_csv("data/preprint_altmetrics.csv")
+preprints %>%
+  inner_join(preprint_altmetric_counts, by = "doi") %>%
+  left_join(published_altmetric_counts, by = "published_doi") %>%
+  select(doi, score:policies, published_doi, published_score:published_policies) %>%
+  write_csv("data/preprint_altmetrics_20190901_20200430.csv")
+
+```
+
+# Full altmetrics (NOTE: should check licensing agreements with Altmetric before making data publicly available)
+
+```{r}
+
+# API request function. Retrieving full altmetrics data requires an api key 
+# that is authorized to use the 'fetch' API endpoint
+fetchRequest <- function(doi){
+  
+  # URL for API call 
+  url <- paste0("http://api.altmetric.com/v1/fetch/doi/", doi, "?key=", api_key)
+  
+  # Make request
+  response <- httr::GET(url)
+  
+  # Check for empty response (404)
+  if (response$status_code == 404) { 
+    return(NA_character_)
+  }else{
+    return(httr::content(response))
+  }
+}
+
+altmetrics_data <- map(preprints$doi, fetchRequest)
+
+```
+
+# Extract Twitter IDs
+
+```{r}
+
+getTweetIDs <- function(item) {
+  if(!is.character(item)) {
+    length_tweets = length(item$posts$twitter)
+    if(length_tweets > 0) {
+      d <- tibble(
+             doi = rep(item$citation$doi, length_tweets),
+             tweet_id = map_chr(item$posts$twitter, ~.x$tweet_id)
+           )
+      return(d)
+    }
+  }
+}
+
+tweets <- map_dfr(altmetrics_data, getTweetIDs)
+
+```
+
+# Retrieve Twitter data
+
+```{r}
+
+library(rtweet)
+
+# Tweets have to be batched into groups of 90,000 - one batch can be queried
+# in every 15-minute period
+iterations <- ceiling(length(tweet_ids$tweet_id) / 90000)
+
+getTweets <- function(i) {
+
+  if(i == iterations) {
+    ids <- tweet_ids$tweet_id[(((i-1) * 90000) + 1):length(tweet_ids$tweet_id)]
+  } else {
+    ids <- tweet_ids$tweet_id[(((i-1) * 90000) + 1):(i*90000)]
+  }
+  
+  tweets <- lookup_tweets(ids, parse = T)
+  
+  Sys.sleep(900) # 15 minutes
+  
+  return(tweets)
+  
+}
+
+tweets <- map_dfr(c(1:iterations), getTweets)
+
+```
+
+# Write tweets to file
+
+```{r}
+
+tweet_ids %>%
+  inner_join(tweets, by = c("tweet_id" = "status_id")) %>%
+  # hashtags are in list - convert to a single string
+  mutate(hashtags = map_chr(hashtags, ~ str_c(.x, collapse = ", "))) %>%
+  # select important fields
+  select(user_id, tweet_id, status_url, created_at, screen_name, text, reply_to_status_id,
+         reply_to_user_id, reply_to_screen_name, is_quote, is_retweet, favorite_count,
+         retweet_count, quote_count, reply_count, hashtags, retweet_status_id,
+         retweet_user_id, retweet_text, retweet_created_at, retweet_retweet_count, followers_count,
+         location, description) %>%
+  distinct() %>%
+  write_csv("data/preprint_tweets.csv")
 
 ```
 

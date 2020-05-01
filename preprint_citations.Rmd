@@ -1,0 +1,83 @@
+---
+title: "R Notebook"
+---
+
+```{r}
+
+library(tidyverse)
+library(rdimensions) # in development: https://github.com/nicholasmfraser/rdimensions
+
+# Retrieve auth token for dimensions
+dimensions_login()
+
+```
+
+# Load preprint data
+
+```{r}
+
+preprints <- read_csv("data/preprints_full_20190901_20200430.csv")
+
+```
+
+# Retrieve citations for preprints and their respective published articles
+
+```{r}
+
+# Function for retrieving citations for a set of DOIs from Dimensions
+getCitations <- function(dois) {
+  dois <- map_chr(dois, ~str_c('"', ., '"'))
+  doi_string <- str_c(dois, collapse = ", ")
+  q <- enc2utf8(str_c('search publications where doi in [', 
+                      doi_string, 
+                      '] return publications[doi+times_cited] limit 1000'))
+  data <- dimensions_query(noquote(q))$publications
+  Sys.sleep(1)
+  return(tibble(
+    doi = map_chr(data, ~.$doi),
+    citations = map_int(data, ~.$times_cited)
+  ))
+}
+
+max_dois <- 250 # Max DOIs allowable per query
+
+# Citations for preprints
+preprint_dois <- preprints %>% pull(doi)
+preprint_doi_chunks <- split(preprint_dois, ceiling(seq_along(preprint_dois)/max_dois))
+preprint_citations <- map_dfr(preprint_doi_chunks, getCitations) %>%
+  mutate(doi = str_trim(str_to_lower(doi)))
+
+# Citations for published_articles
+published_dois <- preprints %>% filter(!is.na(published_doi)) %>% pull(published_doi)
+published_doi_chunks <- split(published_dois, ceiling(seq_along(published_dois)/max_dois))
+published_citations <- map_dfr(published_doi_chunks, getCitations) %>%
+  rename(
+    published_doi = doi,
+    published_citations = citations
+  ) %>%
+  group_by(published_doi) %>% 
+  # In a small number of cases, multiple records are returned for the same article. 
+  # In each group, one article usually has citation counts and the others do not
+  # here we select the one with the highest citation counts
+  arrange(desc(published_citations)) %>% 
+  slice(1) %>%
+  mutate(published_doi = str_trim(str_to_lower(published_doi)))
+
+```
+
+# Create final citations dataset
+
+```{r}
+
+preprints %>%
+  left_join(preprint_citations, by = "doi") %>%
+  # when a preprint is not found, we assume it has zero citations
+  replace_na(list(citations = 0)) %>%
+  left_join(published_citations, by = "published_doi") %>%
+  select(doi, citations, published_doi, published_citations) %>%
+  write_csv("data/preprint_citations_20190901_20200430.csv")
+
+```
+
+
+

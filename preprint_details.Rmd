@@ -8,6 +8,7 @@ title: "R Notebook"
 
 library(tidyverse)
 library(rcrossref)
+library(roadoi)
 
 ```
 
@@ -22,10 +23,13 @@ library(rcrossref)
 max_results_per_page <- 100
 base_url <- "https://api.biorxiv.org/details/"
 
+start <- "2013-11-01"
+end <- "2020-04-30"
+
 getPreprintData <- function(server) {
   
   # Make initial request
-  url <- paste0(base_url, server, "/2020-01-01/", Sys.Date(), "/", 0)
+  url <- paste0(base_url, server, "/", start, "/", end, "/", 0)
   request <- httr::GET(url = url)
   content <- httr::content(request, as = "parsed")
   
@@ -37,7 +41,7 @@ getPreprintData <- function(server) {
 
   for (i in 1:iterations) {
     cursor <- i * max_results_per_page
-    url <- paste0(base_url, server, "/2020-01-01/", Sys.Date(), "/", cursor)
+    url <- paste0(base_url, server, "/", start, "/", end, "/", cursor)
     request <- httr::GET(url)
     content <- httr::content(request, as = "parsed")
     data <- c(data, content$collection)
@@ -46,7 +50,7 @@ getPreprintData <- function(server) {
   return(data)
 }
 
-preprint_data <- purrr::map(c("biorxiv", "medrxiv"), getPreprintData)
+preprint_data <- purrr::map(c("medrxiv", "biorxiv"), getPreprintData)
 
 parsePreprintData <- function(item) {
   tibble(
@@ -58,6 +62,7 @@ parsePreprintData <- function(item) {
     author_corresponding_institution = item$author_corresponding_institution,
     posted_date = item$date,
     version = item$version,
+    license = item$license,
     type = item$type,
     category = item$category,
     abstract = item$abstract,
@@ -67,26 +72,62 @@ parsePreprintData <- function(item) {
 }
 
 # Build a search string containing terms related to COVID-19
-search_string <- "coronavirus|covid-19|sars-cov|ncov-2019|2019-ncov|hcov-19|human_coronavirus 2019|sars-2|wuhan seafood market pneumonia virus|ncip|pars"
+search_string <- "coronavirus|covid-19|sars-cov|ncov-2019|2019-ncov|hcov-19|sars-2"
 
 # Parse data to dataframe
-preprints <- map_df(preprint_data, ~ map_df(.x, parsePreprintData)) %>%
+preprints_all <- map_dfr(preprint_data, ~ map_df(.x, parsePreprintData)) %>%
+  group_by(doi) %>%
+  # calculate number of versions of a preprint and number of authors
+  mutate(n_versions = n()) %>%
+  ungroup() %>%
+  # keep the first version record
   filter(version == 1) %>%
-  # clean up DOIs for later matching
+  select(-version) %>%
   mutate(
+    # clean up DOIs for later matching
     doi = str_trim(str_to_lower(doi)),
     published_doi = str_trim(str_to_lower(published_doi)),
     covid_preprint = case_when(
       str_detect(title, regex(search_string, ignore_case = TRUE)) ~ T, 
       str_detect(abstract, regex(search_string, ignore_case = TRUE)) ~ T,
-      T ~ F)
+      T ~ F),
+    n_authors = map_int(authors, ~length(strsplit(., split = ";")[[1]]))
     ) %>%
-  # some duplicates are included - filter them out
-  distinct()
+  # some duplicates are included
+  distinct() %>%
+  # reorder elements
+  select(source, doi, posted_date, covid_preprint, title, abstract, n_versions, 
+         license, type, category, authors, n_authors, author_corresponding, 
+         author_corresponding_institution,  is_published, published_doi)
 
 ```
 
-# Retrieve published article metadata via Crossref
+# Save basic metadata of all preprints
+
+```{r}
+
+# Due to file size limits on Github (files must be <100Mb), we split the data 
+# into two parts: 2013-11-01 to 2018-12-31, and 2019-01-01 to 2020-04-30
+preprints_all %>%
+  filter(posted_date <= "2018-12-31") %>%
+  write_csv("data/preprints_basic_20131101_20181231.csv")
+preprints_all %>%
+  filter(posted_date >= "2019-01-01") %>%
+  write_csv("data/preprints_basic_20190101_20200430.csv")
+
+```
+
+# Subset preprints for analysis (Sept 2019 - Apr 2020)
+
+```{r}
+
+preprints <- preprints_all %>%
+  filter(posted_date >= "2019-09-01",
+         posted_date <= "2020-04-30")
+
+```
+
+# Published article metadata via Crossref
 
 ```{r}
 
@@ -110,7 +151,29 @@ published_articles <- map_df(published_articles_data, parsePublishedArticleData)
 
 ```
 
-# Disambiguate author affiliations (via ROR affiliation matching)
+# OA information for published articles
+
+```{r}
+
+published_dois <- published_articles %>%
+  pull(published_doi)
+
+published_articles_oa <- roadoi::oadoi_fetch(dois = published_dois,
+                                             email = "n.fraser@zbw.eu") %>%
+  mutate(
+    published_doi = doi,
+    published_article_is_oa = is_oa,
+    published_best_oa_location = map_chr(best_oa_location, ~ if(length(.$host_type)) .$host_type else NA),
+    published_journal_is_oa = journal_is_oa,
+    published_best_oa_license = map_chr(best_oa_location, ~ if(length(.$license)) .$license else NA)
+  ) %>%
+  select(published_doi, published_article_is_oa, published_journal_is_oa,
+         published_best_oa_location, published_best_oa_license) %>%
+  mutate(published_doi = str_trim(str_to_lower(published_doi)))
+
+```
+
+# Disambiguated author affiliations via ROR affiliation matching (preprints only)
 
 ```{r}
 
@@ -122,6 +185,9 @@ published_articles <- map_df(published_articles_data, parsePublishedArticleData)
 # The first institution returned (which always has the highest score) is retained.
 
 getAuthorAffiliations <- function(doi, institution) {
+  
+  # update progress bar
+  pb$tick()$print()
   
   base_url <- "https://api.ror.org/organizations?affiliation="
   encoded_institution <- URLencode(institution)
@@ -141,9 +207,14 @@ getAuthorAffiliations <- function(doi, institution) {
   }
 }
 
+# set counter for progress bar
+pb <- progress_estimated(length(preprints$doi))
+
 affiliations <- map2_df(preprints$doi,
                         preprints$author_corresponding_institution, 
-                        getAuthorAffiliations)
+                        getAuthorAffiliations) %>%
+  mutate(doi = str_trim(str_to_lower(doi))) %>%
+  distinct()
 
 ```
 
@@ -151,9 +222,15 @@ affiliations <- map2_df(preprints$doi,
 
 ```{r}
 
-final <- preprints %>%
-  left_join(published_articles, by = "published_doi") %>%
-  left_join(affiliations, by = "doi")
+preprints_full <- preprints %>%
+  #left_join(published_articles, by = "published_doi") %>%
+  #left_join(published_articles_oa, by = "published_doi") %>%
+  left_join(affiliations, by = "doi") %>%
+  mutate(delay_in_days = difftime(published_date,  posted_date, units = c("days"))) %>%
+  select(source:author_corresponding_institution,
+         institution_match_score:institution_match_country_code,
+         is_published, published_doi, published_date, delay_in_days, 
+         published_title, published_abstract:published_best_oa_license)
 
 ```
 
@@ -161,7 +238,7 @@ final <- preprints %>%
 
 ```{r}
 
-write_csv(final, "data/preprint_details.csv")
+write_csv(preprints_full, "data/preprints_full_20190901_20200430.csv")
 
 ```
 
