@@ -115,6 +115,7 @@ dim_items_oa <- oadoi_fetch(dois = dim_items$doi, email = "n.fraser@zbw.eu") %>%
 
 dim_items %>%
   inner_join(dim_items_oa, by = "doi") %>%
+  distinct() %>%
   write_csv("data/journal_articles_20200101_20200430.csv")
 
 
