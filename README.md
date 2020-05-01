@@ -53,7 +53,7 @@ All datasets are contained in the folder `data`. A description of the contents o
   * published_doi: the doi of the related published article, if it exists
 
 
-* `preprints_full_20190901_20200430.csv` contains enhanced metadata for a subset of preprints published between September 2019 and April 2020 (i.e. encapsulating our 4-month study period, as well as the 4 months previous for comparison purposes). In addition to the basic metadata contained in `preprints_basic_20131101_20200430.csv`, this file contains the following fields:
+* `preprints_full_20190901_20200430.csv` contains enhanced metadata for a subset of preprints published between September 2019 and April 2020 (i.e. encapsulating our 4-month study period, as well as the 4 months previous for comparison purposes). In addition to the basic metadata contained in the basic metadata files above, this file contains the following fields:
   * institution_match_score: the score returned via the ROR affiliation matching tool, expressed as a number between zero (no match) and one (perfect match)
   * institution_match_type: the method used by the ROR affiliation matching tool (e.g. "Phrase" or "Common Terms")
   * institution_match_name: the name of the best matching institution according to the ROR affiliation matching tool
