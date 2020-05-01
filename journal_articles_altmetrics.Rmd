@@ -1,0 +1,103 @@
+---
+title: "R Notebook"
+---
+
+[There is some redundancy in this file with the code contained in "preprint_altmetrics.Rmd" - may consider tidying this up in future]
+
+# Load libraries
+
+```{r}
+
+library(tidyverse)
+
+```
+
+# Load data
+
+```{r}
+
+articles <- read_csv("data/journal_articles_20200101_20200430.csv")
+
+```
+
+# Counts data
+
+```{r}
+
+# Altmetric API key - set in .Renviron file
+# API key is not strictly necessary but removes rate limits
+api_key <- Sys.getenv("ALTMETRIC_API_KEY")
+
+# API request function
+request <- function(doi){
+  
+  # URL for API call (remove everything after 'doi' if no API key)
+  url <- paste0("http://api.altmetric.com/v1/doi/", doi, "?key=", api_key)
+  
+  # Make request
+  response <- httr::GET(url)
+  
+  # Check for empty response (404)
+  if (response$status_code == 404) { 
+    return()
+  }else{
+    return(response)
+  }
+  
+}
+
+# Get altmetrics data and parse to a dataframe
+getAltmetrics <- function(doi) {
+  
+  response <- request(doi)
+  
+  # If no response, set all counts to 0
+  if(!length(response)){
+    
+    altmetrics_data <- tibble(
+      "doi" = doi,
+      "score" = 0,
+      "twitter" = 0,
+      "facebook" = 0,
+      "blogs" = 0,
+      "news" = 0,
+      "wikipedia" = 0,
+      "policies" = 0
+    )
+    
+  } else {
+    
+    # Retrieve data
+    data <- httr::content(response, as="parsed")
+    
+    # Build tibble of results
+    # Where no data exists on a field, we set it to 0
+    altmetrics_data <- tibble(
+      "doi" = doi,
+      "score" = if (length(data$score)) data$score else NA,
+      "twitter" = if (length(data$cited_by_tweeters_count)) data$cited_by_tweeters_count else 0, 
+      "facebook" = if (length(data$cited_by_fbwalls_count)) data$cited_by_fbwalls_count else 0, 
+      "blogs" = if (length(data$cited_by_feeds_count)) data$cited_by_feeds_count else 0,
+      "news" = if (length(data$cited_by_msm_count)) data$cited_by_msm_count else 0,
+      "wikipedia" = if (length(data$cited_by_wikipedia_count)) data$cited_by_wikipedia_count else 0,
+      "policies" = if (length(data$cited_by_policies_count)) data$cited_by_policies_count else 0
+    )
+  
+  }
+  
+  # update progress bar
+  pb$tick()$print()
+  
+  return(altmetrics_data)
+}
+
+# Retrieve altmetric data for all preprints
+pb <- progress_estimated(length(articles$doi))
+
+# Extract the data and save to file
+map_dfr(articles$doi, getAltmetrics) %>%
+  mutate(doi = str_trim(str_to_lower(doi))) %>%
+  distinct() %>%
+  write_csv("data/journal_article_altmetrics_20200101_20200430.csv")
+
+```
