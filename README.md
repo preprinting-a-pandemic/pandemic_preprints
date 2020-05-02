@@ -101,7 +101,7 @@ All datasets are contained in the folder `data`. A description of the contents o
   * doi: the doi of the preprint
   * collection_date: the calendar month for which the usage data relates to (non-cumulative)
   * abstract_views
-  * full_text_views
+  * full_text_views (only available for bioRxiv preprints)
   * pdf_downloads
   
 

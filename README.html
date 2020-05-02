@@ -400,7 +400,7 @@ summary {
 <h1>Datasets</h1>
 <p>All datasets are contained in the folder <code>data</code>. A description of the contents of each dataset is as follows:</p>
 <ul>
-<li><code>preprints_basic_20131101_20200430.csv</code> contains basic metadata of all preprints deposited on bioRxiv and medRxiv from November 2013 (i.e. coinciding with the launch of bioRxiv) to April 2020. The following fields are contained:
+<li><code>preprints_basic_20131101_20181231.csv</code> and <code>preprints_basic_20190101_20200430.csv</code> contain basic metadata of all preprints deposited on bioRxiv and medRxiv from November 2013 (i.e. coinciding with the launch of bioRxiv) to April 2020. These files were split into two due to Github file size limits (files must be &lt;100Mb). The following fields are contained in each file:
 <ul>
 <li>source: “bioRxiv” or “medRxiv”</li>
 <li>doi: the doi of the preprint</li>
@@ -418,7 +418,7 @@ summary {
 <li>is_published: a boolean determining if a preprint has been published in a scientific journal, based on publication notices posted by bioRxiv/medRxiv directly</li>
 <li>published_doi: the doi of the related published article, if it exists</li>
 </ul></li>
-<li><code>preprints_full_20190901_20200430.csv</code> contains enhanced metadata for a subset of preprints published between September 2019 and April 2020 (i.e. encapsulating our 4-month study period, as well as the 4 months previous for comparison purposes). In addition to the basic metadata contained in <code>preprints_basic_20131101_20200430.csv</code>, this file contains the following fields:
+<li><code>preprints_full_20190901_20200430.csv</code> contains enhanced metadata for a subset of preprints published between September 2019 and April 2020 (i.e. encapsulating our 4-month study period, as well as the 4 months previous for comparison purposes). In addition to the basic metadata contained in the basic metadata files above, this file contains the following fields:
 <ul>
 <li>institution_match_score: the score returned via the ROR affiliation matching tool, expressed as a number between zero (no match) and one (perfect match)</li>
 <li>institution_match_type: the method used by the ROR affiliation matching tool (e.g. “Phrase” or “Common Terms”)</li>
@@ -467,7 +467,7 @@ summary {
 <li>doi: the doi of the preprint</li>
 <li>collection_date: the calendar month for which the usage data relates to (non-cumulative)</li>
 <li>abstract_views</li>
-<li>full_text_views</li>
+<li>full_text_views (only available for bioRxiv preprints)</li>
 <li>pdf_downloads</li>
 </ul></li>
 </ul>
