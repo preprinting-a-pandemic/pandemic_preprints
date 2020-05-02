@@ -1,0 +1,119 @@
+---
+title: "R Notebook"
+---
+
+
+```{r}
+
+library(tidyverse)
+
+```
+
+```{r}
+
+# API key. Requires registration with Disqus
+key <- Sys.getenv("DISQUS_API_KEY")
+
+getThreadsFromUrl <- function(url) {
+  request <- httr::GET(url)
+  data <- httr::content(request)
+  return(data)
+}
+
+# Extraction of relevant information
+extractCommentCounts <- function(item){
+  if(length(item)>1){
+    tibble(
+      doi = str_replace(str_extract(item$link, "10.1101.*"), "v.*", ""),
+      disqus_thread_id = item$id,
+      comments_count = item$posts
+    )
+  }
+}
+
+```
+
+```{r}
+
+has_next <- T
+medrxiv_data <- list()
+cursor <- NULL
+
+while(has_next == T) {
+  
+  if(length(cursor)) {
+    url <- paste0("https://disqus.com/api/3.0/forums/listThreads.json?forum=medrxiv&limit=100&api_key=", key, "&cursor=", cursor)
+  } else {
+    url <- paste0("https://disqus.com/api/3.0/forums/listThreads.json?forum=medrxiv&limit=100&api_key=", key)
+  }
+  
+  d <- getThreadsFromUrl(url)
+  medrxiv_data <- c(medrxiv_data, d$response)
+  
+  if(d$cursor$hasNext == T) {
+    cursor <- d$cursor$`next`
+  } else {
+    has_next <- F
+  }
+}
+
+medrxiv_post_counts <- map_dfr(medrxiv_data, extractCommentCounts) %>%
+  distinct() %>%
+  group_by(doi) %>%
+  mutate(comments_count = sum(comments_count)) %>%
+  ungroup() %>%
+  select(doi, comments_count) %>%
+  distinct()
+
+```
+
+```{r}
+
+Sys.sleep(2000)
+
+has_next <- T
+#biorxiv_data <- list()
+#cursor <- NULL
+
+while(has_next == T) {
+  
+  if(length(cursor)) {
+    url <- paste0("https://disqus.com/api/3.0/forums/listThreads.json?forum=biorxivstage&limit=100&api_key=", key, "&cursor=", cursor)
+  } else {
+    url <- paste0("https://disqus.com/api/3.0/forums/listThreads.json?forum=biorxivstage&limit=100&api_key=", key)
+  }
+  
+  d <- getThreadsFromUrl(url)
+  biorxiv_data <- c(biorxiv_data, d$response)
+  
+  if(d$cursor$hasNext == T) {
+    cursor <- d$cursor$`next`
+  } else {
+    has_next <- F
+  }
+}
+
+biorxiv_post_counts <- map_dfr(biorxiv_data, extractCommentCounts) %>%
+  distinct() %>%
+  group_by(doi) %>%
+  mutate(comments_count = sum(comments_count)) %>%
+  ungroup() %>%
+  select(doi, comments_count) %>%
+  distinct()
+
+```
+
+# Create final dataset
+
+```{r}
+
+preprint_post_counts <- bind_rows(medrxiv_post_counts, biorxiv_post_counts) %>%
+  inner_join(read_csv("data/preprints_full_20190901_20200430.csv"), by = "doi") %>%
+  select(doi, comments_count) %>%
+  write_csv("data/preprint_comments_20190901_20200430.csv")
+
+```
+
+
+
+
