@@ -28,7 +28,7 @@ preprints <- read_csv("data/preprint_details.csv")
 # Scrape the bioRxiv and medRxiv websites for usage stats
 getUsageData <- function(source, doi) {
   
-  if(source == "bioRxiv") {
+  if(source == "biorxiv") {
     base_url = "https://www.biorxiv.org/content/"
   } else {
     base_url = "https://www.medrxiv.org/content/"
@@ -46,16 +46,21 @@ getUsageData <- function(source, doi) {
            doi = doi) %>%
     janitor::clean_names()
   
-  print(doi)
+  # update progress bar
+  pb$tick()$print()
   
   return(data)
   
 }
 
+# set counter for progress bar
+pb <- progress_estimated(length(preprints$doi))
+
 # Retrieve usage data. Sometimes the bioRxix/medRxiv websites time out and
 # return an invalid response. So we conduct the iteration with purrr::safely
 # to prevent errors interrupting the process
 getUsageDataSafely <- safely(getUsageData)
+
 usage_data <- map2(preprints$source, preprints$doi, 
                    function(x, y) getUsageDataSafely(x, y))
 
@@ -75,14 +80,14 @@ parseUsageData <- function(item) {
 }
 
 map_dfr(usage_data, parseUsageData) %>%
-  rename(abstract_views = abstract,
-         full_text_views = full,
+  rename(full_text_views = full,
+         abstract_views = abstract,
          pdf_downloads = pdf,
          collection_date = date) %>%
   inner_join(preprints, by = c("doi", "source")) %>%
-  select(source, doi, posted_date, covid_preprint, collection_date, 
-         abstract_views, full_text_views, pdf_downloads) %>%
-  write_csv("data/preprint_usage.csv")
+  select(doi, collection_date, abstract_views, full_text_views, pdf_downloads) %>%
+  distinct() %>%
+  write_csv("data/preprint_usage_20190901_20200430.csv")
 
 ```
 
