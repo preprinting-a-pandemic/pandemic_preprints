@@ -185,10 +185,9 @@ published_articles_oa <- roadoi::oadoi_fetch(dois = published_dois,
 # matching API. The API returns a list of possible matches, including a 
 # match score (between zero and one, one being a perfect match), and the match
 # type (e.g. matching on common terms in institution names, or on....). 
-# The API-selected best match (field "chosen" = TRUE) is retained.
-# If multiple institutions are API-selected, the highest scoring is retained.
-# If multiple institutions are API-selected and have tied scores, matches 
-# are prioritised based on method with full-phrase being first.
+# The API-selected best match (field "chosen" = TRUE) is retained if score
+# = 1 and match is based on full-phrase matching. Otherwise empty tibble returned.
+# These are the most conservative settings customisable.
 
 getAuthorAffiliations <- function(doi, institution) {
   
@@ -203,8 +202,7 @@ getAuthorAffiliations <- function(doi, institution) {
   if(length(content$items)) {
     data <- content$items
     bind_rows(lapply(data, function(x) unlist(x) %>% t %>% as.data.frame(stringsAsFactors = FALSE))) %>% 
-      filter(chosen == "TRUE") %>%
-      arrange(-as.numeric(score), factor(matching_type, levels = c("PHRASE", "HEURISTICS", "COMMON TERMS", "ACRONYM"))) %>%
+      filter(chosen == "TRUE" & matching_type == "PHRASE" & score == 1) %>%
       slice(1) %>%
       mutate(doi = doi) %>%
       rename(institution_match_score = score,
@@ -240,8 +238,36 @@ preprints_full <- preprints %>%
   select(source:author_corresponding_institution,
          institution_match_score:institution_match_country_code,
          is_published, published_doi, published_date, delay_in_days, 
-         published_title, published_abstract:published_best_oa_license)
-
+         published_title, published_abstract:published_best_oa_license) %>% 
+  # Apply manual correction to terms that lead to misdefined first cases, and terms among the top 50 most common terms that are matched incorrectly
+  mutate(
+    institution_match_country_name = case_when(
+      author_corresponding_institution == "Universidad de los Andes" ~ "Colombia",
+      author_corresponding_institution == "CAS Key Laboratory of Pathogenic Microbiology and Immunology, Institute of Microbiology, Center for Influenza Research and Early-warning (CASCIRE), Chinese Acad" ~ "China",
+      author_corresponding_institution == "Metabiota" ~ "Canada",
+      author_corresponding_institution == "Jinan University" ~ "China",
+      author_corresponding_institution == "The School of Information Science and Technology, Jinan University" ~ "China",
+      author_corresponding_institution == "National Research Council" ~ "Italy",
+      author_corresponding_institution == "Northeastern University" ~ "United States",
+      author_corresponding_institution == "Georgetown University" ~ "United States",
+      author_corresponding_institution == "Institute of Virology, Charite-Universitaetsmedizin Berlin, corporate member of Freie Universitaet Berlin, Humboldt-Universitaet zu Berlin, and Berlin Institute" ~ "Germany",
+      author_corresponding_institution == "CNRS" ~ "France",
+      author_corresponding_institution == "UCSF" ~ "USA",
+      TRUE ~ institution_match_country_name),
+    institution_match_country_code = case_when(
+      author_corresponding_institution == "Universidad de los Andes" ~ "CO",
+      author_corresponding_institution == "CAS Key Laboratory of Pathogenic Microbiology and Immunology, Institute of Microbiology, Center for Influenza Research and Early-warning (CASCIRE), Chinese Acad" ~ "CN",
+      author_corresponding_institution == "Metabiota" ~ "CA",
+      author_corresponding_institution == "Jinan University" ~ "CN",
+      author_corresponding_institution == "The School of Information Science and Technology, Jinan University" ~ "CN",
+      author_corresponding_institution == "National Research Council" ~ "IT",
+      author_corresponding_institution == "Northeastern University" ~ "US",
+      author_corresponding_institution == "Georgetown University" ~ "US",
+      author_corresponding_institution == "Institute of Virology, Charite-Universitaetsmedizin Berlin, corporate member of Freie Universitaet Berlin, Humboldt-Universitaet zu Berlin, and Berlin Institute" ~ "DE",
+      author_corresponding_institution == "CNRS" ~ "FR",
+      author_corresponding_institution == "UCSF" ~ "US",
+      TRUE ~ institution_match_country_code)
+    )
 ```
 
 # Write final dataset to csv

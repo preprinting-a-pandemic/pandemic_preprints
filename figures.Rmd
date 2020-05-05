@@ -9,6 +9,7 @@ title: "R Notebook"
 library(tidyverse)
 library(magrittr)
 library(lubridate)
+library(ggrepel)
 library(patchwork) # for creating nice plot grids
 
 ```
@@ -233,44 +234,23 @@ p1 + p2 + plot_layout(ncol = 1) +
 
 ```{r}
 
-# Prepare data
-mindate <- min(case_author_dates_df$first_preprint, na.rm=TRUE)
-maxdate <- max(case_author_dates_df$first_preprint, na.rm=TRUE)
-
 # Plot timing
-# Maybe scale pointsize by total cases?
-g1 <- preprint_timing %>% 
+g1 <- case_author_dates_df %>% 
   mutate(continent = countrycode::countrycode(institution_match_country_code, origin = 'iso2c', destination = 'continent')) %>% 
   filter(!is.na(first_preprint) & !is.na(first_case)) %>%
-  ggplot(aes(x = first_case, y = first_preprint, label1 = institution_match_country_name, label2 = lag)) +
-  geom_polygon(data = data.frame(x = c(mindate, mindate, maxdate), y = c(mindate, maxdate, maxdate)), aes(x=x, y=y, label1=NULL, label2=NULL), fill = "red", alpha=0.05) +
-  geom_polygon(data = data.frame(x = c(mindate, maxdate, maxdate), y = c(mindate, mindate, maxdate)), aes(x=x, y=y, label1=NULL, label2=NULL), fill = "dodgerblue", alpha=0.05) +
-  geom_point(aes(color = continent)) +
+  ggplot(aes(x = first_case, y = first_preprint, label = institution_match_country_name)) +
+  geom_point(aes(color = continent), size=2) +
+  geom_text_repel(size = 3, force = 1.2, segment.size = 0.2) +
   xlab("Date of first confirmed case") +
   ylab('Date of first preprint authorship') +
-  scale_x_date(limits = c(mindate, maxdate), expand = c(0, 0)) +
-  scale_y_date(limits = c(mindate, maxdate), expand = c(0, 0)) +
   geom_abline(intercept = 0, slope = 1, color="grey50", lty="dashed", alpha=0.5) +
-  ggsave("outputs/figures/partials/preprint_case_to_preprint_scatter.png", width = 10, height = 5)
-
-# Save interactive plot version
-htmlwidgets::saveWidget(plotly::as_widget(htmlwidgets::onRender(
-  plotly::ggplotly(g1), "function(el, x) {
-                el.on('plotly_click', function(d) {
-                var url = d.points[0].customdata;
-                //url
-                window.open(url);
-                });
-                }"
-)), 
-paste0("C:\\Users\\Liam\\Documents\\GitHub\\pandemic_preprints\\outputs\\figures\\partials\\preprint_case_to_preprint_scatter.html"), 
-title = paste0("Preprint timing relative to first case"))
+  ggsave("outputs/figures/partials/preprint_case_to_preprint_scatter.png", width = 10, height = 8)
 
 # Plot histogram of lag
 g2 <- preprint_timing %>%
   ggplot(aes(x=lag)) +
   geom_histogram(bins=30) +
-  scale_x_continuous(breaks=seq(-60, 80, 20), limits = c(-60, 80)) +
+  scale_x_continuous(breaks=seq(-40, 80, 20), limits = c(-40, 80)) +
   xlab("Days from first case until first preprint") +
   ylab("Frequency") +
   ggsave("outputs/figures/partials/preprint_case_to_preprint_hist.png", width = 10, height = 5)
