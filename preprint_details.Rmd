@@ -72,7 +72,10 @@ parsePreprintData <- function(item) {
 }
 
 # Build a search string containing terms related to COVID-19
-search_string <- "coronavirus|covid-19|sars-cov|ncov-2019|2019-ncov|hcov-19|sars-2"
+search_string_covid <- "coronavirus|covid-19|sars-cov|ncov-2019|2019-ncov|hcov-19|sars-2"
+
+# Set date of first case of COVID-19
+covid_start <- "2019-12-31"
 
 # Parse data to dataframe
 preprints_all <- map_dfr(preprint_data, ~ map_df(.x, parsePreprintData)) %>%
@@ -88,8 +91,8 @@ preprints_all <- map_dfr(preprint_data, ~ map_df(.x, parsePreprintData)) %>%
     doi = str_trim(str_to_lower(doi)),
     published_doi = str_trim(str_to_lower(published_doi)),
     covid_preprint = case_when(
-      str_detect(title, regex(search_string, ignore_case = TRUE)) ~ T, 
-      str_detect(abstract, regex(search_string, ignore_case = TRUE)) ~ T,
+      str_detect(title, regex(search_string_covid, ignore_case = TRUE)) & posted_date > covid_start ~ T, 
+      str_detect(abstract, regex(search_string_covid, ignore_case = TRUE)) & posted_date > covid_start ~ T,
       T ~ F),
     n_authors = map_int(authors, ~length(strsplit(., split = ";")[[1]]))
     ) %>%
@@ -182,7 +185,10 @@ published_articles_oa <- roadoi::oadoi_fetch(dois = published_dois,
 # matching API. The API returns a list of possible matches, including a 
 # match score (between zero and one, one being a perfect match), and the match
 # type (e.g. matching on common terms in institution names, or on....). 
-# The first institution returned (which always has the highest score) is retained.
+# The API-selected best match (field "chosen" = TRUE) is retained.
+# If multiple institutions are API-selected, the highest scoring is retained.
+# If multiple institutions are API-selected and have tied scores, matches 
+# are prioritised based on method with full-phrase being first.
 
 getAuthorAffiliations <- function(doi, institution) {
   
@@ -196,14 +202,18 @@ getAuthorAffiliations <- function(doi, institution) {
   content <- httr::content(request, as = "parsed")
   if(length(content$items)) {
     data <- content$items
-    tibble(
-      doi = doi,
-      institution_match_score = data[[1]]$score,
-      institution_match_type = data[[1]]$matching_type,
-      institution_match_name = data[[1]]$organization$name,
-      institution_match_country_name = data[[1]]$organization$country$country_name,
-      institution_match_country_code = data[[1]]$organization$country$country_code
-    )
+    bind_rows(lapply(data, function(x) unlist(x) %>% t %>% as.data.frame(stringsAsFactors = FALSE))) %>% 
+      filter(chosen == "TRUE") %>%
+      arrange(-as.numeric(score), factor(matching_type, levels = c("PHRASE", "HEURISTICS", "COMMON TERMS", "ACRONYM"))) %>%
+      slice(1) %>%
+      mutate(doi = doi) %>%
+      rename(institution_match_score = score,
+      institution_match_type = matching_type,
+      institution_match_name = organization.name,
+      institution_match_country_name = organization.country.country_name,
+      institution_match_country_code = organization.country.country_code) %>%
+      select(doi, institution_match_score, institution_match_type, institution_match_name, institution_match_country_name, institution_match_country_code) %>%
+      as.tibble
   }
 }
 
