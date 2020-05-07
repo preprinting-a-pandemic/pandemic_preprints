@@ -9,6 +9,8 @@ title: "R Notebook"
 library(tidyverse)
 library(magrittr)
 library(lubridate)
+library(ggalluvial)
+library(ggrepel)
 library(patchwork) # for creating nice plot grids
 
 ```
@@ -39,41 +41,6 @@ custom_date_scale <- function(start_date, end_date) {
                limits = c(ymd(start_date), ymd(end_date)))
 }
 
-# Color palette
-# Colors correspond to the 500-level colors from the Material Design color
-# scheme. See https://material-ui.com/customization/color/
-palette_colors <- c(
-  `red`         = "#F44336",
-  `pink`        = "#E91E63",
-  `purple`      = "#9C27B0",
-  `deep purple` = "#673AB7",
-  `indigo`      = "#3F51B5",
-  `blue`        = "#2196F3",
-  `light blue`  = "#03A9F4",
-  `cyan`        = "#00BCD4",
-  `teal`        = "#009688",
-  `green`       = "#4CAF50",
-  `light green` = "#8BC34A",
-  `lime`        = "#CDDC39",
-  `yellow`      = "#FFEB3B",
-  `amber`       = "#FFC107",
-  `orange`      = "#FF9800",
-  `deep orange` = "#FF5722",
-  `brown`       = "#795548",
-  `grey`        = "#9E9E9E",
-  `blue grey`   = "#607D8B")
-
-
-# Retrieve a specific color from the palette
-palette <- function(color) {
-  cols <- c(color)
-  if (is.null(cols)) {
-    return(NA)
-  } else {
-    return(unname(palette_colors[color]))
-  }
-}
-
 ```
 
 # Load datasets
@@ -84,16 +51,21 @@ palette <- function(color) {
 # maintained by Johns Hopkins (https://github.com/CSSEGISandData/COVID-19)
 covid <- read_csv("https://raw.githubusercontent.com/datasets/covid-19/master/data/worldwide-aggregated.csv")
 
-# All preprint and journal article datasets
+# Preprint datasets
 preprints <- read_csv("data/preprints_full_20190901_20200430.csv")
 preprint_usage <- read_csv("data/preprint_usage_20190901_20200430.csv")
 preprint_citations <- read_csv("data/preprint_citations_20190901_20200430.csv")
 preprint_altmetrics <- read_csv("data/preprint_altmetrics_20190901_20200430.csv")
 preprint_timing <- read_csv("data/preprint_earliest_per_country.csv")
+preprint_1 <- read.csv("data/preprints_basic_20131101_20181231.csv", stringsAsFactors = FALSE)
+preprint_2 <- read.csv("data/preprints_basic_20190101_20200430.csv", stringsAsFactors = FALSE)
+preprints_all <- bind_rows(preprint_1, preprint_2)
+
+# Journal articles
 journal_articles <- read_csv("data/journal_articles_20200101_20200430.csv")
 
 # Full preprint data from https://github.com/nicholasmfraser/covid19_preprints
-all_preprints <- read_csv("https://raw.githubusercontent.com/nicholasmfraser/covid19_preprints/master/data/covid19_preprints.csv", col_types = "cccccc")
+other_preprints <- read_csv("https://raw.githubusercontent.com/nicholasmfraser/covid19_preprints/master/data/covid19_preprints.csv", col_types = "cccccc")
 
 # Load previous citation counts fetched?
 load_prev_citations <- TRUE
@@ -299,20 +271,28 @@ p1 + p2 + p3 + p4 + plot_layout(ncol = 1) +
 ```{r}
 
 # Top countries publishing preprints
+
 top_countries <- preprints %>%
+  filter(posted_date >= "2020-01-01") %>%
   count(institution_match_country_code) %>%
   na.omit() %>%
   top_n(10, n) %>%
   arrange(desc(n)) %>%
   pull(institution_match_country_code)
 p1 <- preprints %>%
-  filter(institution_match_country_code %in% top_countries) %>%
+  filter(posted_date >= "2020-01-01",
+         institution_match_country_code %in% top_countries) %>%
+  mutate(institution_match_country_code = factor(institution_match_country_code, 
+                                                 levels = top_countries),
+    covid_preprint = case_when(
+      covid_preprint == T ~ "COVID-19 preprints",
+      covid_preprint == F ~ "non-COVID-19 preprints"
+    )) %>%
   count(covid_preprint, institution_match_country_code) %>%
-  mutate(institution_match_country_code = factor(institution_match_country_code,
-                                                 levels = top_countries)) %>%
-  ggplot() +
-  geom_col(aes(x = institution_match_country_code, y = n, fill = covid_preprint), position = "dodge") +
-  labs(x = "", y = "N", fill = "") +
+  ggplot(aes(x = institution_match_country_code, y = n, fill = covid_preprint),
+         color = "grey50") +
+  geom_col(position = "dodge") +
+  labs(x = "", y = "Preprints deposited", fill = "") +
   scale_y_continuous(labels = scales::comma)
 
 # First case -> first preprint by location
@@ -360,7 +340,7 @@ p5 <- preprints %>%
 # Licenses
 
 
-p1 + p2 + p3 + p4 + p5 + 
+(p1 + p2) / (p3 + p4 + p5) + 
   ggsave("outputs/figures/preprint_attributes.png", width = 8, height = 12)
   
 ```
@@ -642,45 +622,22 @@ p4 <- d %>%
 # Timing of first preprint and first case per country 
 
 ```{r}
-
-# Prepare data
-mindate <- min(case_author_dates_df$first_preprint, na.rm=TRUE)
-maxdate <- max(case_author_dates_df$first_preprint, na.rm=TRUE)
-
 # Plot timing
-# Maybe scale pointsize by total cases?
-g1 <- preprint_timing %>% 
+g1 <- case_author_dates_df %>% 
   mutate(continent = countrycode::countrycode(institution_match_country_code, origin = 'iso2c', destination = 'continent')) %>% 
   filter(!is.na(first_preprint) & !is.na(first_case)) %>%
-  ggplot(aes(x = first_case, y = first_preprint, label1 = institution_match_country_name, label2 = lag)) +
-  geom_polygon(data = data.frame(x = c(mindate, mindate, maxdate), y = c(mindate, maxdate, maxdate)), aes(x=x, y=y, label1=NULL, label2=NULL), fill = "red", alpha=0.05) +
-  geom_polygon(data = data.frame(x = c(mindate, maxdate, maxdate), y = c(mindate, mindate, maxdate)), aes(x=x, y=y, label1=NULL, label2=NULL), fill = "dodgerblue", alpha=0.05) +
-  geom_point(aes(color = continent)) +
+  ggplot(aes(x = first_case, y = first_preprint, label = institution_match_country_name)) +
+  geom_point(aes(color = continent), size=2) +
+  geom_text_repel(size = 3, force = 1.2, segment.size = 0.2) +
   xlab("Date of first confirmed case") +
   ylab('Date of first preprint authorship') +
-  scale_x_date(limits = c(mindate, maxdate), expand = c(0, 0)) +
-  scale_y_date(limits = c(mindate, maxdate), expand = c(0, 0)) +
   geom_abline(intercept = 0, slope = 1, color="grey50", lty="dashed", alpha=0.5) +
-  ggsave("outputs/figures/partials/preprint_case_to_preprint_scatter.png", width = 10, height = 5)
-
-# Save interactive plot version
-htmlwidgets::saveWidget(plotly::as_widget(htmlwidgets::onRender(
-  plotly::ggplotly(g1), "function(el, x) {
-                el.on('plotly_click', function(d) {
-                var url = d.points[0].customdata;
-                //url
-                window.open(url);
-                });
-                }"
-)), 
-paste0("C:\\Users\\Liam\\Documents\\GitHub\\pandemic_preprints\\outputs\\figures\\partials\\preprint_case_to_preprint_scatter.html"), 
-title = paste0("Preprint timing relative to first case"))
-
+  ggsave("outputs/figures/partials/preprint_case_to_preprint_scatter.png", width = 10, height = 8)
 # Plot histogram of lag
 g2 <- preprint_timing %>%
   ggplot(aes(x=lag)) +
   geom_histogram(bins=30) +
-  scale_x_continuous(breaks=seq(-60, 80, 20), limits = c(-60, 80)) +
+  scale_x_continuous(breaks=seq(-40, 80, 20), limits = c(-40, 80)) +
   xlab("Days from first case until first preprint") +
   ylab("Frequency") +
   ggsave("outputs/figures/partials/preprint_case_to_preprint_hist.png", width = 10, height = 5)
@@ -689,22 +646,16 @@ g2 <- preprint_timing %>%
 # Time until publication
 
 ```{r}
-
 # Prepare data
-
 # Identify proportion of preprints that are published
 preprints %>% filter(source == "biorxiv") %>% with(table(covid_preprint, is_published)) %>% prop.table(margin = 1)*100 %>% round(3)
 preprints %>% filter(source == "medrxiv") %>% with(table(covid_preprint, is_published)) %>% prop.table(margin = 1)*100 %>% round(3)
-
 # Calculate time to publishing
 preprints %<>% mutate(time_to_publish = as.Date(published_date) - as.Date(posted_date))
-
 # Identify any preprints published before or at same time as preprint upload
 publish_before_preprint <- preprints %>% filter(time_to_publish <= 0)
-
 # Identify publishers with at least 10 published preprints across entire dataset
 publisher_list <- preprints %>% pull(published_publisher) %>% table %>% as.data.frame %>% arrange(Freq) %>% filter(Freq > 10) %>% pull(".")
-
 # Plot density of time to publishing for COVID-19/non-COVID-19 preprints by server
 g1 <- preprints %>% 
   mutate(covid_preprint = case_when(
@@ -722,7 +673,6 @@ g1 <- preprints %>%
   scale_fill_manual(values = c(palette("deep orange"), palette("blue grey"))) +
   theme(legend.title = element_blank()) +
   ggsave("outputs/figures/partials/preprint_publishing_time_all.png", width = 10, height = 6)
-
 # Plot boxes of time to publishing for COVID-19/non-COVID-19 preprints by server & publisher
 g2 <- preprints %>% 
   mutate(covid_preprint = case_when(
@@ -746,9 +696,7 @@ g2 <- preprints %>%
 
 # Citation counts
 ```{r}
-
 # Prepare data
-
 # Extract citation counts for all preprint and published dois using CrossRef API
 if (load_prev_citations == TRUE){
   load(file="data\\citations.RData")
@@ -757,14 +705,12 @@ if (load_prev_citations == TRUE){
   published_citation_lookup <- preprints %>% filter(!is.na(published_doi)) %>% pull(published_doi) %>% cr_citation_count %>% rename(published_citations = count, published_doi = doi)
   save(preprint_citation_lookup, published_citation_lookup, file="data\\citations.RData")
 }
-
 # Append to list of preprints
 preprints %<>%
   left_join(preprint_citation_lookup, by = "doi") %>%
   left_join(published_citation_lookup, by = "published_doi") %>% 
   replace_na(list(preprint_citations = 0, published_citations = 0)) %>%
   mutate(total_citations = preprint_citations + published_citations)
-
 # Plot total citations 
 g1 <- preprints %>% 
   mutate(covid_preprint = case_when(
@@ -784,7 +730,6 @@ g1 <- preprints %>%
   facet_wrap(source ~ ., nrow = 2, strip.position = "right") +
   guides(color = FALSE, fill = FALSE) +
   ggsave("outputs/figures/partials/preprint_citations_total.png", width = 5, height = 6)
-
 # Plot individual preprint/published citations 
 g2 <- preprints %>% 
   mutate(covid_preprint = case_when(
@@ -807,7 +752,51 @@ g2 <- preprints %>%
   scale_fill_manual(values = c(palette("deep orange"), palette("grey"))) +
   facet_wrap(source ~ ., nrow = 2, strip.position = "right") +
   ggsave("outputs/figures/partials/preprint_citations_split.png", width = 10, height = 8)
-
 ```
 
 
+# Science focus of senior author
+```{r}
+# For each author, select their chronologically latest COVID-19 preprint
+preprint_author_last <- preprints %>% 
+  filter(covid_preprint == TRUE) %>% 
+  arrange(posted_date) %>% 
+  group_by(author_corresponding) %>% 
+  slice(n())
+# For each author, extract the category of their last preprint
+preprint_author_last %<>% left_join(preprints_all %>% 
+                                      filter(author_corresponding %in% preprint_author_last$author_corresponding & !(doi %in% preprint_author_last$doi)) %>% 
+                                      arrange(posted_date) %>% 
+                                      group_by(author_corresponding) %>% 
+                                      slice(n()),
+                                    by = "author_corresponding") %>%
+  rename_at(vars(contains(".x")), ~ gsub("\\.x","_covid",.)) %>%
+  rename_at(vars(contains(".y")), ~ gsub("\\.y","_previous",.)) %>% 
+  mutate(category_covid = tolower(category_covid), category_previous = tolower(category_previous)) %>%
+  ungroup
+# Append to list of preprints
+preprints %<>%
+  left_join(preprint_citation_lookup, by = "doi") %>%
+  left_join(published_citation_lookup, by = "published_doi") %>% 
+  replace_na(list(preprint_citations = 0, published_citations = 0)) %>%
+  mutate(total_citations = preprint_citations + published_citations)
+# Plot alluvial diagram
+g1 <- ggplot(data = preprint_author_last %>% 
+         filter(!is.na(category_previous)) %>% 
+         select(category_covid, category_previous) %>% 
+         plyr::count() %>%
+         filter(freq >= 5),
+       aes(axis1 = category_previous, axis2 = category_covid, y = freq)) +
+  scale_x_discrete(limits = c("Previous", "COVID-19"), expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0)) +
+  xlab("Preprint categorisation") +
+  ylab("Frequency") +
+  geom_alluvium(aes(fill=category_previous), reverse=TRUE) +
+  geom_stratum(reverse=TRUE) + 
+  geom_text(size = 3.2, stat = "stratum", label.strata = TRUE, reverse=TRUE, size=0.8) +
+  #  geom_text(aes(label = freq), color="gray50", nudge_x=0.23, stat = "alluvium", reverse = TRUE) +
+  geom_text(aes(label = freq), size = 3.2, color="gray30", nudge_x=0.14, stat = "stratum", reverse = TRUE) +
+  guides(fill=FALSE) +
+  theme_bw() +
+  ggsave("outputs/figures/partials/preprint_science_focus.png", width = 8, height = 10)
+```
