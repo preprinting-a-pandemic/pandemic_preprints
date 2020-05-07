@@ -9,6 +9,7 @@ title: "R Notebook"
 library(tidyverse)
 library(rcrossref)
 library(roadoi)
+library(rvest)
 
 ```
 
@@ -177,6 +178,55 @@ published_articles_oa <- roadoi::oadoi_fetch(dois = published_dois,
 
 ```{r}
 
+# some affiliation names (~500) are truncated at 160 characters - in these cases
+# we can instead retrieve full affili from the public webpage and match to the 
+# corresponding author information from the API results
+truncated_institutions <- preprints %>% 
+  mutate(inst_name_length = nchar(author_corresponding_institution)) %>% 
+  filter(inst_name_length == 160)
+
+# Scrape the bioRxiv and medRxiv websites for affiliation information contained
+# in HTML meta tags
+getAuthorInstitutions <- function(doi, institution_truncated) {
+  
+  url <- paste0("https://doi.org/", doi)
+  html <- read_html(url)
+  
+  data <- html %>%
+      html_nodes("meta[name='citation_author_institution'][content]") %>%
+      html_attr('content')
+  
+  institutions <- tibble(
+    doi = doi,
+    institution_truncated = institution_truncated,
+    institution = data
+  )
+
+  return(institutions)
+  
+}
+
+a <- map2_dfr(truncated_institutions$doi[1:100],
+              truncated_institutions$author_corresponding_institution[1:100],
+              getAuthorInstitutions)
+```
+
+
+```{r}
+
+b <- a %>%
+  filter(str_trunc(institution, 160, ellipsis = "") == institution_truncated) %>%
+  distinct()
+
+a %>%
+  filter(!doi %in% b$doi) %>%
+  distinct(doi)
+
+
+```
+
+
+```{r}
 # See https://github.com/ror-community/ror-api
 # The full string of the institution name is passed to the ROR institution
 # matching API. The API returns a list of possible matches, including a 
@@ -215,6 +265,7 @@ affiliations <- map2_df(preprints$doi,
                         getAuthorAffiliations) %>%
   mutate(doi = str_trim(str_to_lower(doi))) %>%
   distinct()
+
 
 ```
 

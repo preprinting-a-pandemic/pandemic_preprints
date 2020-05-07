@@ -57,7 +57,7 @@ while(has_next == T) {
   }
 }
 
-medrxiv_post_counts <- map_dfr(medrxiv_data, extractCommentCounts) %>%
+medrxiv_comment_counts <- map_dfr(medrxiv_data, extractCommentCounts) %>%
   distinct() %>%
   group_by(doi) %>%
   mutate(comments_count = sum(comments_count)) %>%
@@ -93,7 +93,7 @@ while(has_next == T) {
   }
 }
 
-biorxiv_post_counts <- map_dfr(biorxiv_data, extractCommentCounts) %>%
+biorxiv_comment_counts <- map_dfr(biorxiv_data, extractCommentCounts) %>%
   distinct() %>%
   group_by(doi) %>%
   mutate(comments_count = sum(comments_count)) %>%
@@ -107,13 +107,11 @@ biorxiv_post_counts <- map_dfr(biorxiv_data, extractCommentCounts) %>%
 
 ```{r}
 
-preprint_post_counts <- bind_rows(medrxiv_post_counts, biorxiv_post_counts) %>%
+preprint_comment_counts <- bind_rows(medrxiv_comment_counts, biorxiv_comment_counts) %>%
   inner_join(read_csv("data/preprints_full_20190901_20200430.csv"), by = "doi") %>%
   select(doi, comments_count) %>%
   write_csv("data/preprint_comments_20190901_20200430.csv")
 
 ```
-
-
 
 
