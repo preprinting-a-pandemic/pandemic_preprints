@@ -622,6 +622,7 @@ p4 <- d %>%
 # Timing of first preprint and first case per country 
 
 ```{r}
+
 # Plot timing
 g1 <- case_author_dates_df %>% 
   mutate(continent = countrycode::countrycode(institution_match_country_code, origin = 'iso2c', destination = 'continent')) %>% 
@@ -633,6 +634,7 @@ g1 <- case_author_dates_df %>%
   ylab('Date of first preprint authorship') +
   geom_abline(intercept = 0, slope = 1, color="grey50", lty="dashed", alpha=0.5) +
   ggsave("outputs/figures/partials/preprint_case_to_preprint_scatter.png", width = 10, height = 8)
+
 # Plot histogram of lag
 g2 <- preprint_timing %>%
   ggplot(aes(x=lag)) +
@@ -755,14 +757,17 @@ g2 <- preprints %>%
 ```
 
 
+
 # Science focus of senior author
 ```{r}
+
 # For each author, select their chronologically latest COVID-19 preprint
 preprint_author_last <- preprints %>% 
   filter(covid_preprint == TRUE) %>% 
   arrange(posted_date) %>% 
   group_by(author_corresponding) %>% 
   slice(n())
+
 # For each author, extract the category of their last preprint
 preprint_author_last %<>% left_join(preprints_all %>% 
                                       filter(author_corresponding %in% preprint_author_last$author_corresponding & !(doi %in% preprint_author_last$doi)) %>% 
@@ -774,12 +779,14 @@ preprint_author_last %<>% left_join(preprints_all %>%
   rename_at(vars(contains(".y")), ~ gsub("\\.y","_previous",.)) %>% 
   mutate(category_covid = tolower(category_covid), category_previous = tolower(category_previous)) %>%
   ungroup
+
 # Append to list of preprints
 preprints %<>%
   left_join(preprint_citation_lookup, by = "doi") %>%
   left_join(published_citation_lookup, by = "published_doi") %>% 
   replace_na(list(preprint_citations = 0, published_citations = 0)) %>%
   mutate(total_citations = preprint_citations + published_citations)
+
 # Plot alluvial diagram
 g1 <- ggplot(data = preprint_author_last %>% 
          filter(!is.na(category_previous)) %>% 
@@ -799,4 +806,5 @@ g1 <- ggplot(data = preprint_author_last %>%
   guides(fill=FALSE) +
   theme_bw() +
   ggsave("outputs/figures/partials/preprint_science_focus.png", width = 8, height = 10)
+
 ```
