@@ -2,6 +2,6 @@
 .Rhistory
 .RData
 .Ruserdata
-data/preprint_tweets.csv
+data/preprint_tweets_20190901_20200430.csv
 outputs/figures/partials/preprint_case_to_preprint_scatter_files
-
+data/otherservers

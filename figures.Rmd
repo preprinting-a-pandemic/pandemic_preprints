@@ -422,6 +422,7 @@ p3B <- d %>%
 # Write figure caption
 caption <- str_wrap("Figure 3: Distribution of access statistics for COVID-19 and non-COVID-19 preprints posted on bioRxiv and medRxiv. (A) Total abstract views. (B) Total PDF downloads.", width = 125)
 
+
 # Patchwork
 p3A + p3B + plot_layout(ncol = 1) +
   plot_annotation(caption = caption, tag_levels = "A") +
@@ -475,6 +476,73 @@ caption <- str_wrap("Supplementary Figure 3: Distribution of access statistics f
 p3SA + p3SB + plot_layout(ncol = 1) +
   plot_annotation(caption = caption, tag_levels = "A") +
   ggsave("outputs/figures/preprint_access_supplementary.png", width = 10, height = 5)
+
+# Total downloads of COVID and non-COVID preprints by server
+
+# Build a search string containing terms related to COVID-19
+search_string_covid <- "coronavirus|covid-19|sars-cov|ncov-2019|2019-ncov|hcov-19|sars-2"
+
+# Read in and process data from other servers
+# SSRN
+ssrn_preprints <- read.csv("data/otherservers/ssrn_extract.csv", quote = "", stringsAsFactors = FALSE) %>%
+  rename_all(~str_replace_all(.,"\\.|X\\.","")) %>%
+  group_by(abstract_id, ab_title) %>%
+  summarise(pdf_downloads = sum(total_downloads)) %>%
+  mutate(covid_preprint = case_when(
+    str_detect(ab_title, regex(search_string_covid, ignore_case = TRUE)) ~ T, 
+    T ~ F),
+    source = "SSRN") %>% 
+  ungroup
+
+# Research Square
+ressquare_titles <- read.csv("data/otherservers/article_data.csv", stringsAsFactors = FALSE) %>% select(article_identity, title)
+ressquare_texts <- read.csv("data/otherservers/full_article_text-002.csv", stringsAsFactors = FALSE) %>% select(article_identity, plain_abstract)
+ressquare_preprints <- read.csv("data/otherservers/engagement_by_article_and_date.csv", stringsAsFactors = FALSE) %>%
+  left_join(ressquare_titles, by = "article_identity") %>%
+  left_join(ressquare_texts, by = "article_identity") %>%
+  group_by(article_identity, title, plain_abstract) %>%
+  summarise(pdf_downloads = sum(downloads)) %>%
+  mutate(covid_preprint = case_when(
+    str_detect(title, regex(search_string_covid, ignore_case = TRUE)) ~ T, 
+    str_detect(plain_abstract, regex(search_string_covid, ignore_case = TRUE)) ~ T,
+    T ~ F),
+    source = "Research Square") %>% 
+  ungroup
+
+# Preprints.org
+dotorg_preprints <- read.csv("data/otherservers/2020-01-01-2020-04-30_preprints_dot_org.csv", stringsAsFactors = FALSE) %>%
+  rename(pdf_downloads = downloads) %>%
+  mutate(covid_preprint = case_when(
+    str_detect(title, regex(search_string_covid, ignore_case = TRUE)) ~ T, 
+    str_detect(abstract, regex(search_string_covid, ignore_case = TRUE)) ~ T,
+    T ~ F),
+    source = "Preprints.org")
+
+# Bind into one data frame
+all_server_dloads <- bind_rows(preprints_epi_period %>% 
+                                  select(source, covid_preprint, doi) %>% 
+                                  inner_join(preprint_usage %>% select(doi, pdf_downloads), by = "doi") %>%
+                                  select(-doi),
+                                ssrn_preprints %>% select(source, covid_preprint, pdf_downloads),
+                                ressquare_preprints %>% select(source, covid_preprint, pdf_downloads),
+                                dotorg_preprints %>% select(source, covid_preprint, pdf_downloads))
+
+pS3C <- all_server_dloads %>%
+    mutate(covid_preprint = case_when(
+           covid_preprint == T ~ "COVID-19 preprints",
+           covid_preprint == F ~ "non-COVID-19 preprints"
+         )) %>%
+  ggplot(aes(x = source, y = pdf_downloads, color = covid_preprint)) +
+  geom_boxplot(outlier.shape = NA) +
+  geom_jitter(aes(fill = factor(covid_preprint)),
+              shape = 21, size = 1, alpha = 0.2,
+              position = position_jitterdodge(jitter.width = 0.5)) + 
+  labs(x = "Server", y = "Total PDF downloads", 
+       fill = "", color = "") +
+  scale_y_log10(labels = scales::comma, limits = c(1, 1e6), expand = c(0, 0)) +
+  scale_color_manual(values = c(palette("deep orange"), palette("grey"))) +
+  scale_fill_manual(values = c(palette("deep orange"), palette("grey"))) +
+  ggsave("outputs/figures/partials/preprint_downloads_by_server.png", width = 12, height = 6)
 
 ```
 
@@ -651,13 +719,13 @@ pS5F <- preprints_epi_period %>%
   ggsave("outputs/figures/partials/preprint_publishing_percent_server.png", width = 6, height = 4)
 # Plot custom histogram of time to publishing for COVID-19/non-COVID-19 preprints by period
 p5D <- bind_rows(preprints_epi_period %>% 
-  mutate(covid_preprint = case_when(
-    covid_preprint == T ~ "COVID-19 preprints",
-    covid_preprint == F ~ "non-COVID-19 preprints\nJan - Apr")
-  ),
-  preprints_control_period %>% 
-  mutate(covid_preprint = "non-COVID-19 preprints\nSep - Dec")
-  ) %>%
+                   mutate(covid_preprint = case_when(
+                     covid_preprint == T ~ "COVID-19 preprints",
+                     covid_preprint == F ~ "non-COVID-19 preprints\nJan - Apr")
+                   ),
+                 preprints_control_period %>% 
+                   mutate(covid_preprint = "non-COVID-19 preprints\nSep - Dec")
+) %>%
   filter(time_to_publish > 0|is.na(time_to_publish)) %>%
   mutate(pub_bracket = cut(as.numeric(time_to_publish), seq(0,240,by=10), labels=seq(0,230,by=10))) %>%
   group_by(covid_preprint) %>%
@@ -675,13 +743,13 @@ p5D <- bind_rows(preprints_epi_period %>%
   theme(legend.title = element_blank()) +
   ggsave("outputs/figures/partials/preprint_publishing_time.png", width = 10, height = 6)
 p5D <- bind_rows(preprints_epi_period %>% 
-  mutate(covid_preprint = case_when(
-    covid_preprint == T ~ "COVID-19 preprints",
-    covid_preprint == F ~ "non-COVID-19 preprints\nJan - Apr")
-  ),
-  preprints_control_period %>% 
-  mutate(covid_preprint = "non-COVID-19 preprints\nSep - Dec")
-  ) %>%
+                   mutate(covid_preprint = case_when(
+                     covid_preprint == T ~ "COVID-19 preprints",
+                     covid_preprint == F ~ "non-COVID-19 preprints\nJan - Apr")
+                   ),
+                 preprints_control_period %>% 
+                   mutate(covid_preprint = "non-COVID-19 preprints\nSep - Dec")
+) %>%
   filter(time_to_publish > 0|is.na(time_to_publish)) %>%
   count(covid_preprint, time_to_publish) %>%
   complete(time_to_publish, nesting(covid_preprint), fill = list(n = 0)) %>%
@@ -812,11 +880,11 @@ preprints %<>%
   mutate(total_citations = preprint_citations + published_citations)
 # Plot alluvial diagram
 p5A <- ggplot(data = preprint_author_last %>% 
-               filter(!is.na(category_previous)) %>% 
-               select(category_covid, category_previous) %>% 
-               plyr::count() %>%
-               filter(freq >= 5),
-             aes(axis1 = category_previous, axis2 = category_covid, y = freq)) +
+                filter(!is.na(category_previous)) %>% 
+                select(category_covid, category_previous) %>% 
+                plyr::count() %>%
+                filter(freq >= 5),
+              aes(axis1 = category_previous, axis2 = category_covid, y = freq)) +
   scale_x_discrete(limits = c("Previous", "COVID-19"), expand = c(0, 0)) +
   scale_y_continuous(expand = c(0, 0)) +
   xlab("Preprint categorisation") +
@@ -845,24 +913,24 @@ zika_start <- "2015-03-02"
 zika_end <- "2016-11-18"  # Public health emergency declared ended: https://www.who.int/en/news-room/detail/18-11-2016-fifth-meeting-of-the-emergency-committee-under-the-international-health-regulations-(2005)-regarding-microcephaly-other-neurological-disorders-and-zika-virus
 # Parse data to dataframe and plot
 pS1A <- bind_rows(preprints %>% 
-                  filter(posted_date >= "2020-01-01") %>% 
-                  rename(epi_preprint = covid_preprint) %>% 
-                  count(epi_preprint) %>%
-                  mutate(epidemic = "COVID-19"),
-                preprints_all %>% 
-                  filter(posted_date > ebola_start & posted_date <= ebola_end) %>%
-                  mutate(epi_preprint = case_when(str_detect(title, regex(search_string_ebola, ignore_case = TRUE)) ~ T, 
-                                                  str_detect(abstract, regex(search_string_ebola, ignore_case = TRUE)) ~ T,
-                                                  T ~ F)) %>% 
-                  count(epi_preprint) %>%
-                  mutate(epidemic = "Zaire ebolavirus"),
-                preprints_all %>% 
-                  filter(posted_date > zika_start & posted_date <= zika_end) %>%
-                  mutate(epi_preprint = case_when(str_detect(title, regex(search_string_zika, ignore_case = TRUE)) ~ T, 
-                                                  str_detect(abstract, regex(search_string_zika, ignore_case = TRUE)) ~ T,
-                                                  T ~ F)) %>% 
-                  count(epi_preprint) %>%
-                  mutate(epidemic = "Zika virus")) %>% 
+                    filter(posted_date >= "2020-01-01") %>% 
+                    rename(epi_preprint = covid_preprint) %>% 
+                    count(epi_preprint) %>%
+                    mutate(epidemic = "COVID-19"),
+                  preprints_all %>% 
+                    filter(posted_date > ebola_start & posted_date <= ebola_end) %>%
+                    mutate(epi_preprint = case_when(str_detect(title, regex(search_string_ebola, ignore_case = TRUE)) ~ T, 
+                                                    str_detect(abstract, regex(search_string_ebola, ignore_case = TRUE)) ~ T,
+                                                    T ~ F)) %>% 
+                    count(epi_preprint) %>%
+                    mutate(epidemic = "Zaire ebolavirus"),
+                  preprints_all %>% 
+                    filter(posted_date > zika_start & posted_date <= zika_end) %>%
+                    mutate(epi_preprint = case_when(str_detect(title, regex(search_string_zika, ignore_case = TRUE)) ~ T, 
+                                                    str_detect(abstract, regex(search_string_zika, ignore_case = TRUE)) ~ T,
+                                                    T ~ F)) %>% 
+                    count(epi_preprint) %>%
+                    mutate(epidemic = "Zika virus")) %>% 
   mutate(epi_preprint = case_when(
     epi_preprint == T ~ "epidemic-related preprints",
     epi_preprint == F ~ "non-epidemic preprints",
