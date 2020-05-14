@@ -287,7 +287,7 @@ all_server_dloads <- bind_rows(preprints_epi_period %>%
                                 ressquare_preprints %>% select(source, covid_preprint, pdf_downloads),
                                 dotorg_preprints %>% select(source, covid_preprint, pdf_downloads))
 
-pS3B <- all_server_dloads %>%
+pS3C <- all_server_dloads %>%
     mutate(covid_preprint = case_when(
            covid_preprint == T ~ "COVID-19 preprints",
            covid_preprint == F ~ "non-COVID-19 preprints"
