@@ -12,7 +12,7 @@ library(lubridate)
 library(ggalluvial)
 library(ggrepel)
 library(patchwork) # for creating nice plot grids
-library(colorspace)
+library(colorspace) # color palettes
 
 ```
 
@@ -56,17 +56,17 @@ custom_date_scale <- function(start_date, end_date) {
 # maintained by Johns Hopkins (https://github.com/CSSEGISandData/COVID-19)
 covid <- read_csv("https://raw.githubusercontent.com/datasets/covid-19/master/data/worldwide-aggregated.csv")
 
-# Preprint data generated here
+# Main preprint datasets generated here
 preprints <- read_csv("data/preprints_full_20190901_20200430.csv")
 preprints_epi_period <- preprints %>% filter(posted_date >= "2020-01-01") # Subset preprints by period for ease
 preprints_control_period <- preprints %>% filter(posted_date < "2020-01-01")
-
 preprint_usage <- read_csv("data/preprint_usage_20190901_20200430.csv")
 preprint_citations <- read_csv("data/preprint_citations_20190901_20200430.csv")
 preprint_altmetrics <- read_csv("data/preprint_altmetrics_20190901_20200430.csv")
 preprint_timing <- read_csv("data/preprint_earliest_per_country_20200101_20200430.csv")
 
-preprint_1 <- read.csv("data/preprints_basic_20131101_20181231.csv", stringsAsFactors = FALSE)   # Reconstruct dataset of ALL preprints
+# Reconstruct dataset of ALL preprints
+preprint_1 <- read.csv("data/preprints_basic_20131101_20181231.csv", stringsAsFactors = FALSE)   
 preprint_2 <- read.csv("data/preprints_basic_20190101_20200430.csv", stringsAsFactors = FALSE)
 preprints_all <- bind_rows(preprint_1, preprint_2)
 
@@ -81,7 +81,7 @@ load_prev_citations <- TRUE
 
 ```
 
-# Figure 1:Development of COVID-19, journal articles and preprints over time
+# Figure 1: Development of COVID-19, journal articles and preprints over time
 
 ```{r}
 
@@ -97,7 +97,7 @@ y_2 <- covid %>% filter(Date == "2020-03-11") %>% pull(Confirmed)
 line_length <- 1000000
 spacing <- 100000
 
-p1 <- covid %>%
+p1A <- covid %>%
   select(Date, Confirmed, Deaths) %>%
   rename(Cases = Confirmed) %>%
   pivot_longer(Cases:Deaths) %>%
@@ -121,11 +121,11 @@ p1 <- covid %>%
   custom_date_scale("2020-01-01", NA) +
   scale_color_manual(values = qualitative_hcl(2, palette = "Set2")) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  ggsave("outputs/figures/partials/covid19_cases.png", width = 12, height = 6)
+  ggsave("outputs/figures/partials/Figure_1A.png", width = 12, height = 6)
 
 # Panel B: Number of journal articles and preprints on COVID-19
 
-p2 <- preprints_other %>%
+p1B <- preprints_other %>%
   mutate(posted_date = as.Date(posted_date),
          type = "Preprints") %>%
   bind_rows(journal_articles %>% 
@@ -144,7 +144,7 @@ p2 <- preprints_other %>%
   custom_date_scale("2020-01-01", NA) +
   scale_fill_manual(values = qualitative_hcl(2, palette = "Set2")) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  ggsave("outputs/figures/partials/preprints_journal_articles.png", width = 12, height = 6)
+  ggsave("outputs/figures/partials/Figure_1B.png", width = 12, height = 6)
 
 # Panel C: Preprints on COVID-19 from multiple sources
 
@@ -166,7 +166,7 @@ fct_levels <- preprints_other %>%
   mutate(source = c(source[source != "Other"], "Other")) %>%
   pull(source)
 
-p3 <- preprints_other %>%
+p1C <- preprints_other %>%
   mutate(posted_date = as.Date(posted_date),
          source = case_when(
            source %in% other ~ "Other",
@@ -185,15 +185,77 @@ p3 <- preprints_other %>%
   custom_date_scale("2020-01-01", NA) +
   scale_fill_manual(values = qualitative_hcl(12, palette = "Set2")) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  ggsave("outputs/figures/partials/preprints.png", width = 12, height = 6)
+  ggsave("outputs/figures/partials/Figure_1C.png", width = 12, height = 6)
 
 # Figure caption
 caption <- str_wrap("Figure 1: Development of COVID-19 and publication response between January 2020 and April 2020. (A) Number of COVID-19 confirmed cases and reported deaths. Data from https://github.com/datasets/covid-19/. (B) Cumulative growth of journal articles and preprints containing COVID-19 related search terms. (C) Cumulative growth of preprints containing COVID-19 related search terms, broken down by individual preprint server. Journal data in (B) is based upon data extracted from Dimensions (https://www.dimensions.ai), preprint data in (B) and (C) is based upon data gathered by Fraser and Kramer (2020; https://doi.org/10.6084/m9.figshare.12033672).", width = 120)
 
 # Patchwork
-p1 + p2 + p3 + plot_layout(ncol = 1) +
+p1A + p1B + p1C + plot_layout(ncol = 1) +
   plot_annotation(caption = caption, tag_levels = "A") +
-  ggsave("outputs/figures/covid19_preprint_development.png", width = 10, height = 10)
+  ggsave("outputs/figures/Figure_1.png", width = 10, height = 10)
+
+```
+
+# Supplementary Figure 1: Number of preprints in relation to previous epidemics (Zika, Ebola)
+
+```{r}
+
+# Build search strings containing terms related to other epidemics
+search_string_ebola <- "ebola|ZEBOV"
+search_string_zika <- "zika|ZIKV"
+
+# Set dates of all epidemics
+covid_start <- "2020-01-01"
+covid_end <- "2020-04-30"
+
+ebola_start <- "2014-01-24"
+ebola_end <- "2016-06-09"  # Outbreak declared ended: https://apps.who.int/iris/bitstream/handle/10665/208883/ebolasitrep_10Jun2016_eng.pdf
+
+zika_start <- "2015-03-02"
+zika_end <- "2016-11-18"  # Public health emergency declared ended: https://www.who.int/en/news-room/detail/18-11-2016-fifth-meeting-of-the-emergency-committee-under-the-international-health-regulations-(2005)-regarding-microcephaly-other-neurological-disorders-and-zika-virus
+
+# Determine preprint counts of previous epidemics
+covid_counts <- preprints %>% 
+                  filter(posted_date >= covid_start) %>% 
+                  rename(epi_preprint = covid_preprint) %>% 
+                  count(epi_preprint) %>%
+                  mutate(epidemic = "COVID-19")
+
+ebola_counts <- preprints_all %>% 
+                  filter(posted_date >= ebola_start & posted_date <= ebola_end) %>%
+                  mutate(epi_preprint = case_when(
+                    str_detect(title, regex(search_string_ebola, ignore_case = TRUE)) ~ T, 
+                    str_detect(abstract, regex(search_string_ebola, ignore_case = TRUE)) ~ T,
+                    T ~ F)) %>% 
+                  count(epi_preprint) %>%
+                  mutate(epidemic = "Zaire ebolavirus")
+
+zika_counts <- preprints_all %>% 
+                  filter(posted_date >= zika_start & posted_date <= zika_end) %>%
+                  mutate(epi_preprint = case_when(
+                    str_detect(title, regex(search_string_zika, ignore_case = TRUE)) ~ T, 
+                    str_detect(abstract, regex(search_string_zika, ignore_case = TRUE)) ~ T,
+                    T ~ F)) %>% 
+                  count(epi_preprint) %>%
+                  mutate(epidemic = "Zika virus")
+
+# Generate plot
+pS1 <- bind_rows(covid_counts, ebola_counts, zika_counts) %>% 
+  mutate(epi_preprint = case_when(
+      epi_preprint == T ~ "Epidemic-related preprints",
+      epi_preprint == F ~ "Non-epidemic preprints"),
+    epidemic = factor(epidemic, levels=c("Zaire ebolavirus", "Zika virus", "COVID-19"))) %>%
+  ggplot(aes(x = epi_preprint, y = n, colour = epi_preprint, fill = epi_preprint)) +
+  geom_bar(stat = "identity") +
+  labs(x = "Epidemic", y = "Total preprints", fill = "", color = "") +
+  scale_color_manual(values = qualitative_hcl(2, palette = "Set2")) +
+  scale_fill_manual(values = qualitative_hcl(2, palette = "Set2")) +
+  facet_wrap(epidemic ~ ., strip.position = "bottom") +
+  theme(axis.title.x = element_blank(), 
+        axis.text.x = element_blank(), 
+        axis.ticks.x = element_blank()) +
+  ggsave("outputs/figures/Figure_S1.png", width = 10, height = 5)
 
 ```
 
@@ -357,7 +419,6 @@ p <- p1 / (p2 | p3 + plot_layout(guides = "keep")) / (p4 | p5) / (p6 | p7) +
 
 p + plot_annotation(caption = caption, tag_levels = "A") +
   ggsave("outputs/figures/preprint_attributes.png", width = 10, height = 12) 
-  
   
 ```
 
@@ -897,53 +958,4 @@ p5A <- ggplot(data = preprint_author_last %>%
   guides(fill=FALSE) +
   theme_bw() +
   ggsave("outputs/figures/partials/preprint_science_focus.png", width = 8, height = 10)
-```
-
-# Previous epidemics
-```{r}
-# Build search strings containing terms related to other epidemics
-search_string_ebola <- "ebola|ZEBOV"
-search_string_zika <- "zika|ZIKV"
-# Set dates of other epidemics
-covid_start <- "2019-12-31"
-covid_end <- "2020-04-30"
-ebola_start <- "2014-01-24"
-ebola_end <- "2016-06-09"  # Outbreak declared ended: https://apps.who.int/iris/bitstream/handle/10665/208883/ebolasitrep_10Jun2016_eng.pdf
-zika_start <- "2015-03-02"
-zika_end <- "2016-11-18"  # Public health emergency declared ended: https://www.who.int/en/news-room/detail/18-11-2016-fifth-meeting-of-the-emergency-committee-under-the-international-health-regulations-(2005)-regarding-microcephaly-other-neurological-disorders-and-zika-virus
-# Parse data to dataframe and plot
-pS1A <- bind_rows(preprints %>% 
-                    filter(posted_date >= "2020-01-01") %>% 
-                    rename(epi_preprint = covid_preprint) %>% 
-                    count(epi_preprint) %>%
-                    mutate(epidemic = "COVID-19"),
-                  preprints_all %>% 
-                    filter(posted_date > ebola_start & posted_date <= ebola_end) %>%
-                    mutate(epi_preprint = case_when(str_detect(title, regex(search_string_ebola, ignore_case = TRUE)) ~ T, 
-                                                    str_detect(abstract, regex(search_string_ebola, ignore_case = TRUE)) ~ T,
-                                                    T ~ F)) %>% 
-                    count(epi_preprint) %>%
-                    mutate(epidemic = "Zaire ebolavirus"),
-                  preprints_all %>% 
-                    filter(posted_date > zika_start & posted_date <= zika_end) %>%
-                    mutate(epi_preprint = case_when(str_detect(title, regex(search_string_zika, ignore_case = TRUE)) ~ T, 
-                                                    str_detect(abstract, regex(search_string_zika, ignore_case = TRUE)) ~ T,
-                                                    T ~ F)) %>% 
-                    count(epi_preprint) %>%
-                    mutate(epidemic = "Zika virus")) %>% 
-  mutate(epi_preprint = case_when(
-    epi_preprint == T ~ "epidemic-related preprints",
-    epi_preprint == F ~ "non-epidemic preprints",
-  ),
-  epidemic = factor(epidemic, levels=c("Zaire ebolavirus", "Zika virus", "COVID-19"))
-  ) %>%
-  ggplot(aes(x = epi_preprint, y = n, colour = epi_preprint, fill = epi_preprint)) +
-  geom_bar(stat="identity") +
-  labs(x = "Epidemic", y = "Total preprints", 
-       fill = "", color = "") +
-  scale_color_manual(values = c(palette("deep orange"), palette("grey"))) +
-  scale_fill_manual(values = c(palette("deep orange"), palette("grey"))) +
-  facet_wrap(epidemic ~ ., strip.position = "bottom") +
-  theme(axis.title.x=element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank()) +
-  ggsave("outputs/figures/partials/preprint_past_epidemics.png", width = 9, height = 4)
 ```
