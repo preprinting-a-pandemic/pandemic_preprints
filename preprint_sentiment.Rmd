@@ -1,0 +1,154 @@
+---
+title: "R Notebook"
+---
+
+
+```{r}
+
+library(magrittr)
+library(tidyverse)
+library(tidytext)
+library(sentimentr)
+
+```
+
+# Set up lexicon for sentiment analysis
+
+```{r}
+
+# Neutralise epidemiological, academic, mis-polarised and other erroneous (short string) terms to create custom lexicon based on SO-CAL Google
+custom_lexicon <- update_key(lexicon::hash_sentiment_socal_google, 
+                             drop = c("ill", "infectious", "sick", "diseased", "s", "respiratory", "k y", "abstract", "supplementary", "n a s", "m i n d", "cd r", "cl s", "tl s", "ol", "sq", "id", "biological", "cellular", "scientific", "clinical", "genetic", "medical", "honest", "ventilated", "gentle", "honest", "lucky", "shiny", "lean", "mild", "modest", "potent", "cute", "revealing", "intact", "thrilling", "decent"))
+```
+
+# Sentiment calculation: Twitter data
+
+```{r}
+
+# Read in and process tweet data
+tweets <- read.csv("data\\preprint_tweets_20190901_20200430.csv", stringsAsFactors = FALSE) %>%
+  mutate(tweet_id = as.character(tweet_id)) %>%
+  left_join(preprints %>% filter(posted_date >= "2020-01-01") %>% select(doi, title, covid_preprint), by = "doi") %>%
+  mutate(text = str_replace_all(pattern = fixed(title), replacement = "", string = text)) %>%  # remove title words from tweet text
+  distinct(doi, text, .keep_all = TRUE)                                                        # filter to unique tweets per preprint
+  
+# Calculate valence-based sentiments using custom lexicon
+preprint_tweets_sent <- tweets %>%
+  mutate(text_split = get_sentences(text)) %$%
+  sentiment_by(text_split, by = tweet_id, polarity_dt = custom_lexicon) %>%
+  left_join(tweets %>% select(tweet_id, doi, text), by = "tweet_id") %>%
+  inner_join(preprints %>% select(doi, title, covid_preprint), by = "doi")
+
+# Inspect outputs
+# View 20 most negative and most positive tweets
+preprint_tweets_sent %>% arrange(ave_sentiment) %>% distinct(text) %>% slice(1:20)
+preprint_tweets_sent %>% arrange(ave_sentiment) %>% distinct(text) %>% slice((n()-19):n())
+
+# Dissect the polarity scoring for 20 most negative and most positive tweets
+preprint_tweets_sent %>% arrange(ave_sentiment) %>% distinct(text) %>% slice(1:20) %>% pull(text) %>% extract_sentiment_terms(custom_lexicon)
+preprint_tweets_sent %>% arrange(ave_sentiment) %>% distinct(text) %>% slice((n()-19):n()) %>% pull(text) %>% extract_sentiment_terms(custom_lexicon)
+
+# View 20 most negative and most positive preprints by tweets
+preprint_tweets_sent %>% group_by(doi, title, covid_preprint) %>% summarise(mean_sentiment = mean(ave_sentiment)) %>% arrange(mean_sentiment) %>% ungroup %>% slice(1:20)
+preprint_tweets_sent %>% group_by(doi, title, covid_preprint) %>% summarise(mean_sentiment = mean(ave_sentiment)) %>% arrange(mean_sentiment) %>% ungroup %>% slice((n()-19):n())
+
+# # Plot to inspect via mouseover 1000 most positive/negative TWEETS
+# g1 <- preprint_tweets_sent %>% 
+#   arrange(ave_sentiment) %>% 
+#   slice(1:10000, (n()-9999):n())  %>% 
+#   mutate(covid_preprint = case_when(
+#     covid_preprint == T ~ "COVID-19 preprints",
+#     covid_preprint == F ~ "non-COVID-19 preprints")
+#   ) %>%
+#   ggplot(aes(x = word_count, y = ave_sentiment, color = covid_preprint, lab = text)) +
+#   scale_color_manual(values = c(palette("deep orange"), palette("grey"))) +
+#   geom_jitter(alpha=0.2, width=0.3, height=0.1) +
+#   theme_bw()  
+# 
+# htmlwidgets::saveWidget(plotly::as_widget(plotly::ggplotly(g1)),
+#                         "tweet_sentiment_socal.html", 
+#                         title = "Tweet sentiment scoring: SO-CAL")
+
+# Plot of average polarity of tweets per preprint
+p4E <- preprint_tweets_sent %>% 
+  group_by(doi, title, covid_preprint) %>% 
+  summarise(mean_sentiment = mean(ave_sentiment)) %>%
+  ungroup %>%
+  mutate(covid_preprint = case_when(
+    covid_preprint == T ~ "COVID-19 preprints",
+    covid_preprint == F ~ "non-COVID-19 preprints")
+  ) %>%
+  ggplot(aes(x = covid_preprint, y = mean_sentiment, color = covid_preprint, label=title)) +
+  geom_boxplot(outlier.shape = NA) +
+  geom_jitter(aes(fill = factor(covid_preprint)),
+              shape = 21, size = 1, alpha = 0.2,
+              position = position_jitterdodge(jitter.width = 1.0)) + 
+  labs(x = "", y = "Mean tweet sentiment score", 
+       fill = "", color = "") +
+  scale_color_manual(values = c(palette("deep orange"), palette("grey"))) +
+  scale_fill_manual(values = c(palette("deep orange"), palette("grey"))) +
+  # facet_wrap(source ~ ., nrow = 2, strip.position = "right") +
+  guides(color = FALSE, fill = FALSE) +
+  ggsave("outputs/figures/partials/preprint_tweet_sentiment.png", width = 5, height = 6)
+```
+
+# Sentiment calculation: comments from biorxiv, medrxiv (COVID-19 collection papers only)
+
+```{r}
+
+# Read in and process comment data
+preprint_disq_comments <- rbind(read.csv("data\\cv_bx_disqus_comments.csv", stringsAsFactors = FALSE, sep=";") %>% 
+                                  mutate(source = "biorxiv"),
+                                read.csv("data\\cv_mx_disqus_comments.csv", stringsAsFactors = FALSE, sep=";") %>% 
+                                  mutate(source = "medrxiv")) %>%
+  rename(text = dsqus_comment, doi = preprint_doi)
+
+# Calculate valence-based sentiments using custom lexicon
+preprint_comments_sent <- preprint_disq_comments %>% 
+  filter(doi %in% (preprints_epi_period %>% filter(covid_preprint == TRUE) %>% pull(doi))) %>%
+  mutate(text_split = get_sentences(text)) %$%
+  sentiment_by(text_split, by = id, polarity_dt = custom_lexicon) %>%
+  left_join(preprint_disq_comments %>% select(source, doi, id, text), by = "id") %>%
+  left_join(preprints %>% select(doi, title), by = "doi")
+
+# Inspect outputs
+# View 20 most negative and most positive comments
+preprint_comments_sent %>% arrange(ave_sentiment) %>% distinct(text) %>% slice(1:20)
+preprint_comments_sent %>% arrange(ave_sentiment) %>% distinct(text) %>% slice((n()-19):n())
+
+# Dissect the polarity scoring for 20 most negative and most positive comments
+preprint_comments_sent %>% arrange(ave_sentiment) %>% slice(1:20) %>% pull(text) %>% extract_sentiment_terms(custom_lexicon)
+preprint_comments_sent %>% arrange(ave_sentiment) %>% slice((n()-19):n()) %>% pull(text) %>% extract_sentiment_terms(custom_lexicon)
+
+# View 20 most negative and most positive preprints by comments
+preprint_comments_sent %>% group_by(doi, title) %>% summarise(mean_sentiment = mean(ave_sentiment)) %>% arrange(mean_sentiment) %>% ungroup %>% slice(1:20)
+preprint_comments_sent %>% group_by(doi, title) %>% summarise(mean_sentiment = mean(ave_sentiment)) %>% arrange(mean_sentiment) %>% ungroup %>% slice((n()-19):n())
+
+# # Plot to inspect via mouseover sentiment polarity of all comments
+# g3 <- preprint_comments_sent %>% arrange(ave_sentiment) %>%
+#   ggplot(aes(x = word_count, y = ave_sentiment, lab = text)) +
+#   geom_jitter(alpha=0.2, width=0.3, height=0.1) +
+#   theme_bw()  
+# 
+# htmlwidgets::saveWidget(plotly::as_widget(plotly::ggplotly(g3)),
+#                         paste0("C:\\Users\\Liam\\Desktop\\Preprints SARS-CoV-2\\Collab proj\\comment_sentiment_socal.html"), 
+#                         title = "Disqus comment sentiment scoring: SO-CAL")
+
+# Plot of average polarity of comments per preprint
+pS5A <-  preprint_comments_sent %>% 
+  group_by(doi, title) %>% 
+  summarise(mean_sentiment = mean(ave_sentiment)) %>%
+  ungroup %>%
+  ggplot(aes(x = "", y = mean_sentiment, label=title, colour = "")) +
+  geom_boxplot(outlier.shape = NA) +
+  geom_jitter(shape = 21, size = 1, alpha = 0.2,
+              position = position_jitterdodge(jitter.width = 1.0),
+              aes(fill = "")) + 
+  labs(x = "COVID-19 preprints", y = "Mean comment sentiment score", 
+       fill = "", color = "") +
+  scale_color_manual(values = c(palette("deep orange"))) +
+  scale_fill_manual(values = c(palette("deep orange"))) +
+  # facet_wrap(source ~ ., nrow = 2, strip.position = "right") +
+  guides(color = FALSE, fill = FALSE)  +
+  ggsave("outputs/figures/partials/preprint_comment_sentiment.png", width = 5, height = 6)
+```
