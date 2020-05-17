@@ -556,10 +556,10 @@ search_string_covid <- "coronavirus|covid-19|sars-cov|ncov-2019|2019-ncov|hcov-1
 
 # Read in and process data from other servers
 # SSRN
-ssrn_preprints <- read.csv("data/otherservers/ssrn_extract.csv", 
-                           quote = "", 
-                           stringsAsFactors = FALSE) %>%
-  rename_all(~str_replace_all(.,"\\.|X\\.","")) %>%
+ssrn_preprints <- read.csv("data/otherservers/ssrn_extract_3_LB.csv", 
+                           stringsAsFactors = FALSE, 
+                           fileEncoding = "UTF-8-BOM") %>%
+  rename_all(~tolower(str_replace_all(.,"\\.|X\\.",""))) %>%
   group_by(abstract_id, ab_title) %>%
   summarise(pdf_downloads = sum(total_downloads)) %>%
   mutate(covid_preprint = case_when(
