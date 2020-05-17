@@ -737,13 +737,13 @@ ssrn_preprints <- read.csv("data/otherservers/ssrn_extract_3_LB.csv",
   ungroup()
 
 # Research Square
-#ressquare_titles <- read.csv("data/otherservers/article_data.csv", 
-#                             stringsAsFactors = FALSE) %>% 
-#  select(article_identity, title)
+ressquare_titles <- read.csv("data/otherservers/article_data.csv", 
+                             stringsAsFactors = FALSE) %>% 
+  select(article_identity, title)
 
-#ressquare_texts <- read.csv("data/otherservers/full_article_text-002.csv", 
-#                            stringsAsFactors = FALSE) %>% 
-#  select(article_identity, plain_abstract)
+ressquare_texts <- read.csv("data/otherservers/full_article_text-002.csv", 
+                            stringsAsFactors = FALSE) %>% 
+  select(article_identity, plain_abstract)
 
 ressquare_preprints <- read.csv("data/otherservers/engagement_by_article_and_date.csv", 
                                 stringsAsFactors = FALSE) %>%
