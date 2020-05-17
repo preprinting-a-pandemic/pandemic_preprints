@@ -365,8 +365,8 @@ summary {
 </div>
 
 
-<p>This repository contains code and datasets for the study “Preprinting a pandemic: the role of preprints in the 2020 COVID-19 pandemic” [work in progress].</p>
-<p>The README below details the general approach to harvesting data for this study, and a more detailed overview of the data contained in each of the main datasets.</p>
+<p>This repository contains code and datasets for the study “Preprinting a pandemic: the role of preprints in the 2020 COVID-19 pandemic” [work in progress - add link here when published].</p>
+<p>This README file details the general approach to harvesting data for this study, and a more detailed overview of the data contained in each of the main datasets.</p>
 <div id="general-approach" class="section level1">
 <h1>General approach</h1>
 <div id="preprint-metadata" class="section level3">
@@ -376,6 +376,7 @@ summary {
 <p>Preprint metadata harvested from the bioRxiv API was enhanced through several additional sources:</p>
 <ul>
 <li>Raw author affiliation strings were queried against the <a href="https://github.com/ror-community/ror-api">ROR affiliation matching tool</a>, to return disambiguated affiliation and country data. A similar approach was taken in a recent study on bioRxiv international authorship by <a href="https://www.biorxiv.org/content/10.1101/2020.04.25.060756v1">Abdill, Adamowicz and Blekhman</a>. The service returns a “best matching” affiliation, as well as a matching score which may be used as a threshold to include/exclude certain records.</li>
+<li>Word and reference counts of each preprint were added by crawling of the bioRxiv and medRxiv public web pages. Word counts refer to those of the main text only (i.e. not including the abstract, figures, tables, acknowledgements and references).</li>
 <li>Where a preprint was linked with a published article, more detailed metadata relating to the published article was added via the <a href="http://api.crossref.org/">Crossref API</a>. In addition, the OA status of the published article was determined using <a href="http://unpaywall.org/">Unpaywall</a>.</li>
 </ul>
 </div>
@@ -390,6 +391,10 @@ summary {
 <div id="usage-data" class="section level3">
 <h3>Usage data</h3>
 <p>Usage data for preprints only were harvested by crawling of the public bioRxiv and medRxiv webpages. Usage data includes abstract views, pdf downloads, and for bioRxiv only, full text views. Usage data is available only at a monthly level.</p>
+</div>
+<div id="comments-data" class="section level3">
+<h3>Comments data</h3>
+<p>[tbc - which source will we use?]</p>
 </div>
 <div id="journal-articles" class="section level3">
 <h3>Journal articles</h3>
@@ -420,6 +425,8 @@ summary {
 </ul></li>
 <li><code>preprints_full_20190901_20200430.csv</code> contains enhanced metadata for a subset of preprints published between September 2019 and April 2020 (i.e. encapsulating our 4-month study period, as well as the 4 months previous for comparison purposes). In addition to the basic metadata contained in the basic metadata files above, this file contains the following fields:
 <ul>
+<li>n_words: word counts of main text</li>
+<li>n_refs: number of references</li>
 <li>institution_match_score: the score returned via the ROR affiliation matching tool, expressed as a number between zero (no match) and one (perfect match)</li>
 <li>institution_match_type: the method used by the ROR affiliation matching tool (e.g. “Phrase” or “Common Terms”)</li>
 <li>institution_match_name: the name of the best matching institution according to the ROR affiliation matching tool</li>
@@ -470,11 +477,19 @@ summary {
 <li>full_text_views (only available for bioRxiv preprints)</li>
 <li>pdf_downloads</li>
 </ul></li>
-</ul>
-<p>Descriptions to complete:</p>
+<li><code>preprint_comments_20190901_20200430.csv</code> contains counts of comments harvested from the DISQUS API between September 2019 and April 2020. The following fields are contained:
 <ul>
-<li><code>journal_articles_20200101_20200430.csv</code></li>
-<li><code>journal_article_altmetrics_20200101_20200430.csv</code></li>
+<li>doi: the doi of the preprint</li>
+<li>comments_count: the total number of commments received by a preprint. Note that the count is aggregated over all preprint versions (e.g. if V1 received 10 comments, and V2 received 5 comments, the comments_count here would be 15).</li>
+</ul></li>
+</ul>
+</div>
+<div id="to-complete" class="section level1">
+<h1>To Complete:</h1>
+<ul>
+<li>Descriptions of journal article datasets (if we use them)</li>
+<li>Descriptions of comments files from bioRxiv/medRxiv (if we use for sentiment analysis)</li>
+<li>Descriptions of any other external files</li>
 </ul>
 </div>
 

@@ -321,6 +321,114 @@ preprints_full <- preprints %>%
     )
 ```
 
+# Preprint Word Counts
+
+```{r}
+
+word_count <- function(string) {
+  sapply(strsplit(string, " "), length)
+}
+
+# Scrape the bioRxiv and medRxiv websites for usage stats
+getWordCounts <- function(doi) {
+  
+  base_url = "https://www.biorxiv.org/content/"
+  
+  url <- paste0(base_url, doi, "v1.full")
+  
+  html <- read_html(url)
+  
+  # Get all nodes contained in article full text
+  data <- html %>%
+    html_nodes(".fulltext-view")
+  
+  # All paragraphs (anything in "<p>" tags)
+  p_text <- data %>%
+    html_nodes("p") %>%
+    html_text(trim = TRUE) %>%
+    str_trim(., side = "both") %>%
+    str_remove_all(., "\\[(.*?)\\]") %>%
+    str_c(., collapse = " ")
+  
+  # Abstract
+  abstract_text <- data %>%
+    html_nodes(xpath="//div[contains(@id, 'abstract-') and @class='abstract']") %>%
+    html_text(trim = TRUE) %>%
+    str_trim(., side = "both") %>%
+    str_remove_all(., "\\[(.*?)\\]") %>%
+    str_c(., collapse = " ")
+  
+  # Figure captions
+  fig_text <- data %>% 
+    html_nodes(".fig-caption") %>%
+    html_text(trim = TRUE) %>%
+    str_trim(., side = "both") %>%
+    str_remove_all(., "\\[(.*?)\\]") %>%
+    str_c(., collapse = " ")
+  
+  # Table captions
+  table_text <- data %>% 
+    html_nodes(".table-caption") %>%
+    html_text(trim = TRUE) %>%
+    str_trim(., side = "both") %>%
+    str_remove_all(., "\\[(.*?)\\]") %>%
+    str_c(., collapse = " ")
+  
+  # Acknowledgements
+  ack_text <- data %>% 
+    html_nodes(xpath="//div[contains(@id, 'ack-') and contains(@class, 'ack')]") %>%
+    html_text(trim = TRUE) %>%
+    str_trim(., side = "both") %>%
+    str_remove_all(., "\\[(.*?)\\]") %>%
+    str_c(., collapse = " ")
+  
+  n_words <- word_count(p_text) - 
+              word_count(abstract_text)
+              word_count(fig_text) - 
+              word_count(table_text) -
+              word_count(ack_text)
+    
+  n_refs <- html %>%
+    html_nodes(xpath="//*[contains(@class, 'ref-cit')]") %>%
+    html_text() %>%
+    length()
+
+  # update progress bar
+  pb$tick()$print()
+  
+  return(list(
+    doi = doi,
+    word_count = n_words,
+    ref_count = n_refs
+  ))
+  
+}
+
+# Retrieve usage data. Sometimes the bioRxix/medRxiv websites time out and
+# return an invalid response. So we conduct the iteration with purrr::safely
+# to prevent errors interrupting the process
+getWordCountsSafely <- safely(getWordCounts)
+
+biorxiv_preprints <- preprints %>% 
+  filter(posted_date >= "2020-01-01", 
+         source == "biorxiv")
+
+# set counter for progress bar
+pb <- progress_estimated(length(biorxiv_preprints$doi))
+
+word_counts <- map(biorxiv_preprints$doi, ~ getWordCountsSafely(.))
+
+word_counts_df <- map_dfr(word_counts, ~ tibble(doi = .$result$doi,
+                                                n_words = .$result$word_count,
+                                                n_refs = .$result$ref_count))
+
+# Merge with other preprint data
+preprints_full <- preprints_full %>%
+  left_join(df, by = "doi") %>%
+  select(source:n_versions, n_words, n_refs, license:published_best_oa_license)
+  
+```
+
 # Write final dataset to csv
 
 ```{r}
@@ -328,4 +436,5 @@ preprints_full <- preprints %>%
 write_csv(preprints_full, "data/preprints_full_20190901_20200430.csv")
 
 ```
+
 

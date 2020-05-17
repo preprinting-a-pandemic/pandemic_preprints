@@ -72,8 +72,8 @@ medrxiv_comment_counts <- map_dfr(medrxiv_data, extractCommentCounts) %>%
 Sys.sleep(2000)
 
 has_next <- T
-#biorxiv_data <- list()
-#cursor <- NULL
+biorxiv_data <- list()
+cursor <- NULL
 
 while(has_next == T) {
   

@@ -1,6 +1,6 @@
-This repository contains code and datasets for the study "Preprinting a pandemic: the role of preprints in the 2020 COVID-19 pandemic" [work in progress].
+This repository contains code and datasets for the study "Preprinting a pandemic: the role of preprints in the 2020 COVID-19 pandemic" [work in progress - add link here when published].
 
-The README below details the general approach to harvesting data for this study, and a more detailed overview of the data contained in each of the main datasets.
+This README file details the general approach to harvesting data for this study, and a more detailed overview of the data contained in each of the main datasets.
 
 # General approach
 
@@ -13,6 +13,7 @@ The bioRxiv API also supplies DOI-DOI links between preprints and published arti
 Preprint metadata harvested from the bioRxiv API was enhanced through several additional sources:
 
 * Raw author affiliation strings were queried against the [ROR affiliation matching tool](https://github.com/ror-community/ror-api), to return disambiguated affiliation and country data. A similar approach was taken in a recent study on bioRxiv international authorship by [Abdill, Adamowicz and Blekhman](https://www.biorxiv.org/content/10.1101/2020.04.25.060756v1). The service returns a "best matching" affiliation, as well as a matching score which may be used as a threshold to include/exclude certain records.
+* Word and reference counts of each preprint were added by crawling of the bioRxiv and medRxiv public web pages. Word counts refer to those of the main text only (i.e. not including the abstract, figures, tables, acknowledgements and references).
 * Where a preprint was linked with a published article, more detailed metadata relating to the published article was added via the [Crossref API](http://api.crossref.org/). In addition, the OA status of the published article was determined using [Unpaywall](http://unpaywall.org/).
 
 ### Altmetrics 
@@ -26,6 +27,10 @@ Citation counts for each preprint as well as their linked published article were
 ### Usage data
 
 Usage data for preprints only were harvested by crawling of the public bioRxiv and medRxiv webpages. Usage data includes abstract views, pdf downloads, and for bioRxiv only, full text views. Usage data is available only at a monthly level.
+
+### Comments data
+
+[tbc - which source will we use?]
 
 ### Journal articles
 
@@ -54,6 +59,8 @@ All datasets are contained in the folder `data`. A description of the contents o
 
 
 * `preprints_full_20190901_20200430.csv` contains enhanced metadata for a subset of preprints published between September 2019 and April 2020 (i.e. encapsulating our 4-month study period, as well as the 4 months previous for comparison purposes). In addition to the basic metadata contained in the basic metadata files above, this file contains the following fields:
+  * n_words: word counts of main text
+  * n_refs: number of references
   * institution_match_score: the score returned via the ROR affiliation matching tool, expressed as a number between zero (no match) and one (perfect match)
   * institution_match_type: the method used by the ROR affiliation matching tool (e.g. "Phrase" or "Common Terms")
   * institution_match_name: the name of the best matching institution according to the ROR affiliation matching tool
@@ -104,8 +111,12 @@ All datasets are contained in the folder `data`. A description of the contents o
   * full_text_views (only available for bioRxiv preprints)
   * pdf_downloads
   
+* `preprint_comments_20190901_20200430.csv` contains counts of comments harvested from the DISQUS API between September 2019 and April 2020. The following fields are contained:
+  * doi: the doi of the preprint
+  * comments_count: the total number of commments received by a preprint. Note that the count is aggregated over all preprint versions (e.g. if V1 received 10 comments, and V2 received 5 comments, the comments_count here would be 15).
+  
+# To Complete:
 
-Descriptions to complete:
-
-* `journal_articles_20200101_20200430.csv`
-* `journal_article_altmetrics_20200101_20200430.csv`
+* Descriptions of journal article datasets (if we use them)
+* Descriptions of comments files from bioRxiv/medRxiv (if we use for sentiment analysis)
+* Descriptions of any other external files

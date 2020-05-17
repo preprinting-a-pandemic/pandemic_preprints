@@ -130,6 +130,10 @@ preprints %>%
 
 ```{r}
 
+# Altmetric API key - set in .Renviron file
+# An API key is necessary for using the Fetch API
+api_key <- Sys.getenv("ALTMETRIC_API_KEY")
+
 # API request function. Retrieving full altmetrics data requires an api key 
 # that is authorized to use the 'fetch' API endpoint
 fetchRequest <- function(doi){
@@ -169,7 +173,7 @@ getTweetIDs <- function(item) {
   }
 }
 
-tweets <- map_dfr(altmetrics_data, getTweetIDs)
+tweet_ids <- map_dfr(altmetrics_data, getTweetIDs)
 
 ```
 
@@ -210,15 +214,17 @@ tweets <- map_dfr(c(1:iterations), getTweets)
 tweet_ids %>%
   inner_join(tweets, by = c("tweet_id" = "status_id")) %>%
   # hashtags are in list - convert to a single string
-  mutate(hashtags = map_chr(hashtags, ~ str_c(.x, collapse = ", "))) %>%
+  mutate(hashtags = map_chr(hashtags, ~ str_c(.x, collapse = ", ")),
+         created_at = lubridate::date(created_at)) %>%
+  filter(created_at <= "2020-04-30") %>%
   # select important fields
-  select(user_id, tweet_id, status_url, created_at, screen_name, text, reply_to_status_id,
+  select(doi, user_id, tweet_id, status_url, created_at, screen_name, text, reply_to_status_id,
          reply_to_user_id, reply_to_screen_name, is_quote, is_retweet, favorite_count,
          retweet_count, quote_count, reply_count, hashtags, retweet_status_id,
-         retweet_user_id, retweet_text, retweet_created_at, retweet_retweet_count, followers_count,
-         location, description) %>%
+         retweet_user_id, retweet_text, retweet_created_at, retweet_retweet_count, 
+         followers_count, location, description) %>%
   distinct() %>%
-  write_csv("data/preprint_tweets.csv")
+  write_csv("data/preprint_tweets_20190901_20200430.csv")
 
 ```
 

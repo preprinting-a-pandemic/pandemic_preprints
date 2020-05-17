@@ -11,9 +11,9 @@ library(magrittr)
 library(lubridate)
 library(ggalluvial)
 library(ggrepel)
-library(corrr) # correlation matrix
+library(corrr) # for correlation matrix
 library(patchwork) # for creating nice plot grids
-library(colorspace) # color palettes
+library(colorspace) # better color palettes
 
 ```
 
@@ -58,7 +58,8 @@ custom_date_scale <- function(start_date, end_date) {
 covid <- read_csv("https://raw.githubusercontent.com/datasets/covid-19/master/data/worldwide-aggregated.csv")
 
 # Main preprint datasets generated here
-preprints <- read_csv("data/preprints_full_20190901_20200430.csv")
+preprints <- read_csv("data/preprints_full_20190901_20200430.csv",
+                      col_types = cols(n_refs = "n", n_words = "n")) # fix reading issue with word + ref counts
 preprints_epi_period <- preprints %>% filter(posted_date >= "2020-01-01") # Subset preprints by period for ease
 preprints_control_period <- preprints %>% filter(posted_date < "2020-01-01")
 preprint_usage <- read_csv("data/preprint_usage_20190901_20200430.csv")
@@ -286,7 +287,7 @@ p2A <- preprints %>%
   custom_date_scale("2020-01-01", NA) +
   scale_fill_manual(values = qualitative_hcl(2, palette = "Set2")) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  ggsave("outputs/figures/partials/covid_non_covid_preprints.png", width = 10, height = 5)
+  ggsave("outputs/figures/partials/Figure_2A.png", width = 10, height = 5)
 
 # Panel B: Countries depositing COVID/non-COVID preprints (top X)
 # Limit to preprints posted between January and April 2020
@@ -318,12 +319,10 @@ p2B <- preprints %>%
   geom_col(color = "grey50", position = position_dodge(preserve = "single")) +
   labs(x = "", y = "% of corresponding authors", fill = "") +
   scale_fill_manual(values = qualitative_hcl(2, palette = "Set2")) +
-  ggsave("outputs/figures/partials/covid_non_covid_countries.png", width = 12, height = 6)
+  guides(fill = FALSE) +
+  ggsave("outputs/figures/partials/Figure_2B.png", width = 5, height = 5)
 
 # Panel C: First case -> first preprint by location
-
-# Pick countries we want to label (prevent overcrowding)
-label_countries <- c("US", "CN", "FR", "DE", "UK")
 
 p2C <- preprint_timing %>%
   mutate(continent = countrycode::countrycode(institution_match_country_code, 
@@ -345,17 +344,11 @@ p2C <- preprint_timing %>%
   coord_cartesian(ylim = c(ymd("2020-01-01", "2020-04-30")),
                   xlim = c(ymd("2020-01-01", "2020-04-30"))) +
   theme(legend.margin = margin(0, 0, 0, 0)) +
-  ggsave("outputs/figures/partials/preprint_case_to_preprint_scatter.png", width = 12, height = 12)
+  ggsave("outputs/figures/partials/Figure_2C.png", width = 5, height = 5)
 
-# Panel D: Word counts (placeholder)
-p2D <- ggplot(data.frame()) + 
-  geom_point() + 
-  xlim(0, 1) + ylim(0, 1) + 
-  annotate("text", x = 0.5, y = 0.5, label = "Placeholder [Word Counts]")
+# Panel D: Author numbers
 
-# Panel E: Author numbers
-
-p2E <- preprints %>%
+p2D <- preprints %>%
   filter(posted_date >= "2020-01-01") %>%
   mutate(n_authors = map_int(authors, ~(length(str_split(., ";")[[1]])))) %>%
   count(covid_preprint, n_authors) %>%
@@ -370,10 +363,32 @@ p2E <- preprints %>%
   ggplot(aes(x = n_authors, y = proportion, fill = covid_preprint)) +
   geom_col(color = "grey50", position = position_dodge(preserve = "single")) +
   labs(x = "Number of authors", y = "% of preprints", fill = "") +
-  scale_x_continuous(breaks = seq(1:30)) +
+  scale_x_continuous(breaks = seq(from = 1, to = 30, by = 2)) +
   scale_fill_manual(values = qualitative_hcl(2, palette = "Set2")) +
   theme(legend.position = "bottom") +
-  ggsave("outputs/figures/partials/covid_non_covid_author_counts.png", width = 12, height = 6)
+  guides(fill = FALSE) +
+  ggsave("outputs/figures/partials/Figure_2D.png", width = 5, height = 5)
+
+# Panel E: Preprints per senior authors
+
+p2E <- preprints %>%
+  filter(posted_date >= "2020-01-01") %>%
+  count(author_corresponding, covid_preprint) %>%
+  count(n, covid_preprint) %>%
+  group_by(covid_preprint) %>%
+  mutate(proportion = (nn/sum(nn) * 100)) %>%
+  ungroup() %>%
+  mutate(covid_preprint = case_when(
+           covid_preprint == T ~ "COVID-19 preprints",
+           covid_preprint == F ~ "non-COVID-19 preprints"
+         )) %>%
+  ggplot(aes(x = n, y = proportion, fill = covid_preprint)) +
+  geom_col(color = "grey50", position = position_dodge(preserve = "single")) +
+  labs(x = "Number of preprints", y = "% of corresponding authors", fill = "") +
+  scale_x_continuous(breaks = seq(1:12)) +
+  scale_fill_manual(values = qualitative_hcl(2, palette = "Set2")) +
+  guides(fill = FALSE) +
+  ggsave("outputs/figures/partials/Figure_2E.png", width = 5, height = 5)
 
 # Panel F: Revisions per preprint for COVID vs non-COVID
 
@@ -393,48 +408,161 @@ p2F <- preprints %>%
   scale_x_continuous(breaks = seq(1:10)) +
   scale_fill_manual(values = qualitative_hcl(2, palette = "Set2")) +
   theme(legend.position = "bottom") +
-  ggsave("outputs/figures/partials/covid_non_covid_versions.png", width = 12, height = 6)
+  guides(fill = FALSE) +
+  ggsave("outputs/figures/partials/Figure_2F.png", width = 5, height = 5)
 
-# Panel G: Preprints per senior authors
+# Panel G: Word counts
 
 p2G <- preprints %>%
-  filter(posted_date >= "2020-01-01") %>%
-  count(author_corresponding, covid_preprint) %>%
-  count(n, covid_preprint) %>%
-  group_by(covid_preprint) %>%
-  mutate(proportion = (nn/sum(nn) * 100)) %>%
-  ungroup() %>%
+  filter(posted_date >= "2020-01-01",
+         source == "biorxiv") %>%
   mutate(covid_preprint = case_when(
-           covid_preprint == T ~ "COVID-19 preprints",
-           covid_preprint == F ~ "non-COVID-19 preprints"
-         )) %>%
-  ggplot(aes(x = n, y = proportion, fill = covid_preprint)) +
-  geom_col(color = "grey50", position = position_dodge(preserve = "single")) +
-  labs(x = "Number of preprints", y = "% of corresponding authors", fill = "") +
-  scale_x_continuous(breaks = seq(1:12)) +
-  scale_fill_manual(values = qualitative_hcl(2, palette = "Set2")) +
-  ggsave("outputs/figures/partials/covid_non_covid_preprints_per_author.png", width = 12, height = 6)
+      covid_preprint == T ~ "COVID-19 preprints",
+      covid_preprint == F ~ "non-COVID-19 preprints"
+    )) %>%
+  ggplot(aes(x = covid_preprint, y = n_words, color = covid_preprint)) +
+  geom_boxplot(outlier.shape = NA) +
+  geom_jitter(shape = 21, size = 0.2, alpha = 0.2, width = 0.3) +
+  labs(x = "", y = "Word Count", fill = "") +
+  scale_color_manual(values = qualitative_hcl(2, palette = "Set2")) +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 12)) +
+  theme(legend.position = "none") +
+  guides(color = FALSE) +
+  ggsave("outputs/figures/partials/Figure_2G.png", width = 5, height = 5)
+
+# Panel H: Reference counts
+
+p2H <- preprints %>%
+  filter(posted_date >= "2020-01-01",
+         source == "biorxiv") %>%
+  mutate(covid_preprint = case_when(
+      covid_preprint == T ~ "COVID-19 preprints",
+      covid_preprint == F ~ "non-COVID-19 preprints"
+    )) %>%
+  ggplot(aes(x = covid_preprint, y = n_refs, color = covid_preprint)) +
+  geom_boxplot(outlier.shape = NA) +
+  geom_jitter(shape = 21, size = 0.2, alpha = 0.2, width = 0.3) +
+  labs(x = "", y = "Reference Count", fill = "") +
+  scale_color_manual(values = qualitative_hcl(2, palette = "Set2")) +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 12)) +
+  theme(legend.position = "none") +
+  guides(color = FALSE) +
+  ggsave("outputs/figures/partials/Figure_2H.png", width = 5, height = 5)
 
 # Figure caption
-caption <- str_wrap("Figure 2: Attributes of COVID-19 and non-COVID-19 preprints deposited on bioRxiv and medRxiv between January and April 2020. (A) Number of preprints deposited per week. (B) Percentage of preprints deposited by country of corresponding author. (C) Correlation between date of the first preprint originating from a country (according to the affiliation of the corresponding author) and the date of the first confirmed case from the same country for COVID-19 preprints. (D) [word counts - tbc]. (E) Distribution of the number of authors per preprint. (F) Distribution of the number of deposited preprint versions. (G) Distribution of the number of preprints posted by the same corresponding author.", width = 120)
+caption <- str_wrap("Figure 2: Attributes of COVID-19 and non-COVID-19 preprints deposited on bioRxiv and medRxiv between January and April 2020. (A) Number of preprints deposited per week. (B) Percentage of preprints deposited by country of corresponding author. (C) Correlation between date of the first preprint originating from a country (according to the affiliation of the corresponding author) and the date of the first confirmed case from the same country for COVID-19 preprints. (D) Distribution of the number of authors per preprint. (E) Distribution of the number of preprints posted by the same corresponding author. (F) Distribution of the number of deposited preprint versions. (G) Word counts per preprints. (H) Reference counts per preprint", width = 120)
 
-p <- p2A / (p2B | p2C + plot_layout(guides = "keep")) / (p2D | p2E) / (p2F | p2G) + 
-  plot_layout(guides = "collect") & theme(legend.position = "top")
+# define layout manually - see https://patchwork.data-imaginist.com/articles/guides/layout.html
+layout <- "
+AAAAAAAAAAAA
+BBBBBBCCCCCC
+DDDDDDEEEEEE
+FFFFFFGGGHHH
+"
+p <- p2A + p2B + p2C + p2D + p2E + p2F + p2G + p2H + 
+  plot_layout(design = layout) & theme(legend.position = "top")
 
+# For some reason this throws an error but still actually works fine...
 p + plot_annotation(caption = caption, tag_levels = "A") +
-  ggsave("outputs/figures/Figure_2.png", width = 10, height = 12) 
+  ggsave("outputs/figures/Figure_2.png", width = 10, height = 12.5) 
   
 ```
 
 # Supplementary Figure 2:
 
-...to add...
+```{r}
+
+# Panel A: COVID vs non-COVID preprints for bioRxiv only
+
+pS2A <- preprints %>%
+  filter(posted_date >= "2020-01-01") %>%
+  mutate(posted_week = floor_date(posted_date, unit = "week", week_start = 1),
+         covid_preprint = case_when(
+           covid_preprint == T ~ "COVID-19 preprints",
+           covid_preprint == F ~ "non-COVID-19 preprints"
+         ),
+         source = factor(source, 
+                         levels = c("biorxiv", "medrxiv"),
+                         labels = c("bioRxiv", "medRxiv"))) %>%
+  count(covid_preprint, source, posted_week) %>%
+  complete(posted_week, nesting(covid_preprint, source), fill = list(n = 0)) %>%
+  ggplot(aes(x = posted_week, y = n, fill = covid_preprint)) +
+  geom_col(color = "grey50", position = position_dodge(preserve = "single")) +
+  labs(x = "Posted date (week beginning)", y = "Preprints deposited", fill = "") +
+  scale_y_continuous(labels = scales::comma) +
+  custom_date_scale("2020-01-01", NA) +
+  scale_fill_manual(values = qualitative_hcl(2, palette = "Set2")) +
+  facet_wrap(. ~ source, nrow = 2, strip.position = "right") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        strip.background = element_rect(color = "grey90", fill = "grey95",)) +
+  ggsave("outputs/figures/partials/Figure_S2A.png", width = 10, height = 5)
+
+# Panel B: Preprint screening time
+pS2B <- ggplot(data.frame()) + 
+  geom_point() + 
+  xlim(0, 1) + ylim(0, 1) + 
+  annotate("text", x = 0.5, y = 0.5, label = "Placeholder [Screening times]")
+
+# Panel C: License types
+pS2C <- preprints %>%
+  filter(posted_date >= "2020-01-01") %>%
+  count(covid_preprint, license) %>%
+  na.omit() %>%
+  group_by(covid_preprint) %>%
+  mutate(proportion = (n/sum(n)) * 100) %>%
+  ungroup() %>%
+  mutate(covid_preprint = case_when(
+      covid_preprint == T ~ "COVID-19 preprints",
+      covid_preprint == F ~ "non-COVID-19 preprints"
+    )) %>%
+  ggplot(aes(x = license, y = proportion, fill = covid_preprint)) +
+  geom_col(color = "grey50", position = position_dodge(preserve = "single")) +
+  labs(x = "License Type", y = "% of preprints", fill = "") +
+  scale_fill_manual(values = qualitative_hcl(2, palette = "Set2")) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  ggsave("outputs/figures/partials/Figure_S2C.png", width = 5, height = 5)
+
+# Panel D: Institutions of senior authors
+
+# Determine top-20 institutions
+top_institutions <- preprints %>%
+  count(institution_match_name) %>%
+  na.omit() %>%
+  top_n(20, n) %>%
+  pull(institution_match_name)
+
+pS2D <- preprints %>%
+  filter(posted_date >= "2020-01-01") %>%
+  count(covid_preprint, institution_match_name) %>%
+  group_by(covid_preprint) %>%
+  mutate(proportion = (n/sum(n)) * 100) %>%
+  ungroup() %>%
+  filter(institution_match_name %in% top_institutions) %>%
+  mutate(covid_preprint = case_when(
+      covid_preprint == T ~ "COVID-19 preprints",
+      covid_preprint == F ~ "non-COVID-19 preprints"
+    )) %>%
+  ggplot(aes(x = institution_match_name, y = proportion, fill = covid_preprint)) +
+  geom_col(color = "grey50", position = position_dodge(preserve = "single")) +
+  labs(x = "", y = "% of preprints", fill = "") +
+  scale_fill_manual(values = qualitative_hcl(2, palette = "Set2")) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  ggsave("outputs/figures/partials/Figure_S2C.png", width = 10, height = 5)
+
+# Caption
+caption <- "Supplementary Figure 2: [tbc]"
+
+# Patchwork
+pS2A + (pS2B | pS2C ) +  pS2D +
+  plot_layout(nrow = 3, heights = c(1.5, 1, 1)) +
+  plot_annotation(caption = caption, tag_levels = "A") +
+  ggsave("outputs/figures/Figure_S2.png", width = 10, height = 10)
+
+```
 
 # Figure 3: Preprint access
 
 ```{r}
-# start date for plots
-start_date <- "2020-01-01"
 
 # Prepare data
 d <- preprint_usage %>%
@@ -448,8 +576,7 @@ d <- preprint_usage %>%
          covid_preprint = case_when(
            covid_preprint == T ~ "COVID-19 preprints",
            covid_preprint == F ~ "non-COVID-19 preprints"
-         )) %>%
-  filter(posted_date >= start_date)
+         ))
 
 # Abstract views
 p3A <- d %>%
@@ -458,16 +585,16 @@ p3A <- d %>%
   geom_boxplot(width = 4, outlier.shape = NA, 
                position = position_dodge(width = 4.5)) +
   geom_jitter(aes(fill = factor(covid_preprint)),
-              shape = 21, size = 0.2, alpha = 0.1, 
+              shape = 21, size = 0.2, alpha = 0.2, 
               position = position_jitterdodge(jitter.width = 2, dodge.width = 4.5)) +
   labs(x = "Posted Date (week beginning)", y = "Total abstract views", 
        fill = "", color = "") +
   scale_y_log10(labels = scales::comma, limits = c(1, 1e6), expand = c(0, 0)) +
-  custom_date_scale("2020-01-01", NA) +
+  custom_date_scale("2020-01-01", "2020-04-30") +
   scale_color_manual(values = qualitative_hcl(2, palette = "Set2")) +
   scale_fill_manual(values = qualitative_hcl(2, palette = "Set2")) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  ggsave("outputs/figures/partials/preprint_abstract_views.png", width = 10, height = 5)
+  ggsave("outputs/figures/partials/Figure_3A.png", width = 10, height = 5)
 
 # PDF downloads
 p3B <- d %>%
@@ -476,20 +603,19 @@ p3B <- d %>%
   geom_boxplot(width = 4, outlier.shape = NA, 
                position = position_dodge(width = 4.5)) +
   geom_jitter(aes(fill = factor(covid_preprint)),
-              shape = 21, size = 0.2, alpha = 0.1, 
+              shape = 21, size = 0.2, alpha = 0.2, 
               position = position_jitterdodge(jitter.width = 2, dodge.width = 4.5)) +
   labs(x = "Posted Date (week beginning)", y = "Total PDF downloads", 
        fill = "", color = "") +
   scale_y_log10(labels = scales::comma, limits = c(1, 1e6), expand = c(0, 0)) +
-  custom_date_scale("2020-01-01", NA) +
+  custom_date_scale("2020-01-01", "2020-04-30") +
   scale_color_manual(values = qualitative_hcl(2, palette = "Set2")) +
   scale_fill_manual(values = qualitative_hcl(2, palette = "Set2")) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  ggsave("outputs/figures/partials/preprint_pdf_downloads.png", width = 10, height = 7.5)
+  ggsave("outputs/figures/partials/Figure_3B.png", width = 10, height = 5)
 
 # Write figure caption
 caption <- str_wrap("Figure 3: Distribution of access statistics for COVID-19 and non-COVID-19 preprints posted on bioRxiv and medRxiv. (A) Total abstract views. (B) Total PDF downloads.", width = 125)
-
 
 # Patchwork
 p3A + p3B + plot_layout(ncol = 1) +
@@ -502,10 +628,8 @@ p3A + p3B + plot_layout(ncol = 1) +
 
 ```{r}
 
-# start date for plots
-start_date <- "2019-09-01"
+# Panel A: Abstract views (bioRxiv + medRxiv, non-COVID)
 
-# Prepare data
 d <- preprint_usage %>%
   inner_join(preprints, by = "doi") %>%
   filter(covid_preprint != T) %>%
@@ -514,47 +638,91 @@ d <- preprint_usage %>%
             abstract_views = sum(abstract_views),
             pdf_downloads = sum(pdf_downloads)) %>%
   ungroup() %>%
-  mutate(posted_week = floor_date(posted_date, unit = "week", week_start = 1)) %>%
-  filter(posted_week >= start_date)
+  mutate(posted_week = floor_date(posted_date, unit = "week", week_start = 1))
 
-# Abstract views
-p3SA <- d %>%
+pS3A <- d %>%
   ggplot(aes(x = posted_week, y = abstract_views, group = posted_week)) +
   geom_boxplot(outlier.shape = NA) +
-  geom_jitter(shape = 21, size = 0.2, alpha = 0.1) +
+  geom_jitter(shape = 21, size = 0.2, alpha = 0.2) +
+  annotate("rect", xmin = ymd("2020-01-01"), xmax = ymd("2020-04-30"),
+           ymin = 1, ymax = 1e5, fill = "red", alpha = 0.2) +
   labs(x = "Posted Date (week beginning)", y = "Total abstract views", 
        fill = "", color = "") +
   scale_y_log10(labels = scales::comma, limits = c(1, 1e5), expand = c(0, 0)) +
-  custom_date_scale("2019-09-01", NA) +
+  custom_date_scale("2019-09-01", "2020-04-30") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  ggsave("outputs/figures/partials/preprint_abstract_views_supplementary.png", width = 12, height = 6)
+  ggsave("outputs/figures/partials/Figure_S3A.png", width = 12, height = 6)
 
-# PDF downloads
-p3SB <- d %>%
+# Panel B: PDF downloads (bioRxiv + medRxiv, non-COVID)
+
+pS3B <- d %>%
   ggplot(aes(x = posted_week, y = pdf_downloads, group = posted_week)) +
   geom_boxplot(outlier.shape = NA) +
-  geom_jitter(shape = 21, size = 0.2, alpha = 0.1) +
+  geom_jitter(shape = 21, size = 0.2, alpha = 0.2) +
+  annotate("rect", xmin = ymd("2020-01-01"), xmax = ymd("2020-04-30"),
+           ymin = 1, ymax = 1e5, fill = "red", alpha = 0.2) +
   labs(x = "Posted Date (week beginning)", y = "Total PDF downloads", 
        fill = "", color = "") +
   scale_y_log10(labels = scales::comma, limits = c(1, 1e5), expand = c(0, 0)) +
-  custom_date_scale("2019-09-01", NA) +
+  custom_date_scale("2019-09-01", "2020-04-30") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  ggsave("outputs/figures/partials/preprint_pdf_downloads_supplementary.png", width = 12, height = 6)
+  ggsave("outputs/figures/partials/Figure_S3B.png", width = 12, height = 6)
 
-# Write figure caption
-caption <- str_wrap("Supplementary Figure 3: Distribution of access statistics for all preprints posted on bioRxiv and medRxiv between 2019-09-01 and 2020-04-30. (A) Total abstract views. (B) Total PDF downloads.", width = 125)
+# Panel C: Abstract views (bioRxiv vs medRxiv, COVID)
 
-# Patchwork
-p3SA + p3SB + plot_layout(ncol = 1) +
-  plot_annotation(caption = caption, tag_levels = "A") +
-  ggsave("outputs/figures/Figure_3.png", width = 10, height = 5)
+d <- preprint_usage %>%
+  inner_join(preprints, by = "doi") %>%
+  filter(covid_preprint == T) %>%
+  group_by(doi, source, posted_date) %>%
+  summarize(full_text_views = sum(full_text_views),
+            abstract_views = sum(abstract_views),
+            pdf_downloads = sum(pdf_downloads)) %>%
+  ungroup() %>%
+  mutate(posted_week = floor_date(posted_date, unit = "week", week_start = 1))
 
-# Total downloads of COVID and non-COVID preprints by server
+pS3C <- d %>%
+  ggplot(aes(x = posted_week, y = abstract_views, color = source,
+             group = interaction(posted_week, source))) +
+  geom_boxplot(width = 4, outlier.shape = NA, 
+               position = position_dodge(width = 4.5)) +
+  geom_jitter(aes(fill = factor(source)),
+              shape = 21, size = 0.2, alpha = 0.2, 
+              position = position_jitterdodge(jitter.width = 2, dodge.width = 4.5)) +
+  labs(x = "Posted Date (week beginning)", y = "Total abstract views", 
+       fill = "", color = "") +
+  scale_y_log10(labels = scales::comma, limits = c(1, 1e6), expand = c(0, 0)) +
+  custom_date_scale("2020-01-01", "2020-04-30") +
+  scale_color_manual(values = qualitative_hcl(2, palette = "Set2")) +
+  scale_fill_manual(values = qualitative_hcl(2, palette = "Set2")) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  ggsave("outputs/figures/partials/Figure_S3C.png", width = 10, height = 5)
+
+# Panel D: PDF downloads (bioRxiv vs medRxiv, COVID)
+
+pS3D <- d %>%
+  ggplot(aes(x = posted_week, y = pdf_downloads, color = source,
+             group = interaction(posted_week, source))) +
+  geom_boxplot(width = 4, outlier.shape = NA, 
+               position = position_dodge(width = 4.5)) +
+  geom_jitter(aes(fill = factor(source)),
+              shape = 21, size = 0.2, alpha = 0.2, 
+              position = position_jitterdodge(jitter.width = 2, dodge.width = 4.5)) +
+  labs(x = "Posted Date (week beginning)", y = "Total PDF downloads", 
+       fill = "", color = "") +
+  scale_y_log10(labels = scales::comma, limits = c(1, 1e6), expand = c(0, 0)) +
+  custom_date_scale("2020-01-01", "2020-04-30") +
+  scale_color_manual(values = qualitative_hcl(2, palette = "Set2")) +
+  scale_fill_manual(values = qualitative_hcl(2, palette = "Set2")) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  ggsave("outputs/figures/partials/Figure_S3D.png", width = 10, height = 5)
+
+# Panel E: PDF downloads for additional preprint servers
 
 # Build a search string containing terms related to COVID-19
 search_string_covid <- "coronavirus|covid-19|sars-cov|ncov-2019|2019-ncov|hcov-19|sars-2"
 
 # Read in and process data from other servers
+
 # SSRN
 ssrn_preprints <- read.csv("data/otherservers/ssrn_extract_3_LB.csv", 
                            stringsAsFactors = FALSE, 
@@ -569,9 +737,16 @@ ssrn_preprints <- read.csv("data/otherservers/ssrn_extract_3_LB.csv",
   ungroup()
 
 # Research Square
-ressquare_titles <- read.csv("data/otherservers/article_data.csv", stringsAsFactors = FALSE) %>% select(article_identity, title)
-ressquare_texts <- read.csv("data/otherservers/full_article_text-002.csv", stringsAsFactors = FALSE) %>% select(article_identity, plain_abstract)
-ressquare_preprints <- read.csv("data/otherservers/engagement_by_article_and_date.csv", stringsAsFactors = FALSE) %>%
+#ressquare_titles <- read.csv("data/otherservers/article_data.csv", 
+#                             stringsAsFactors = FALSE) %>% 
+#  select(article_identity, title)
+
+#ressquare_texts <- read.csv("data/otherservers/full_article_text-002.csv", 
+#                            stringsAsFactors = FALSE) %>% 
+#  select(article_identity, plain_abstract)
+
+ressquare_preprints <- read.csv("data/otherservers/engagement_by_article_and_date.csv", 
+                                stringsAsFactors = FALSE) %>%
   left_join(ressquare_titles, by = "article_identity") %>%
   left_join(ressquare_texts, by = "article_identity") %>%
   group_by(article_identity, title, plain_abstract) %>%
@@ -581,10 +756,11 @@ ressquare_preprints <- read.csv("data/otherservers/engagement_by_article_and_dat
     str_detect(plain_abstract, regex(search_string_covid, ignore_case = TRUE)) ~ T,
     T ~ F),
     source = "Research Square") %>% 
-  ungroup
+  ungroup()
 
 # Preprints.org
-dotorg_preprints <- read.csv("data/otherservers/2020-01-01-2020-04-30_preprints_dot_org.csv", stringsAsFactors = FALSE) %>%
+dotorg_preprints <- read.csv("data/otherservers/2020-01-01-2020-04-30_preprints_dot_org.csv", 
+                             stringsAsFactors = FALSE) %>%
   rename(pdf_downloads = downloads) %>%
   mutate(covid_preprint = case_when(
     str_detect(title, regex(search_string_covid, ignore_case = TRUE)) ~ T, 
@@ -601,7 +777,8 @@ all_server_dloads <- bind_rows(preprints_epi_period %>%
                                 ressquare_preprints %>% select(source, covid_preprint, pdf_downloads),
                                 dotorg_preprints %>% select(source, covid_preprint, pdf_downloads))
 
-pS3C <- all_server_dloads %>%
+# Generate plot
+pS3E <- all_server_dloads %>%
     mutate(covid_preprint = case_when(
            covid_preprint == T ~ "COVID-19 preprints",
            covid_preprint == F ~ "non-COVID-19 preprints"
@@ -609,14 +786,23 @@ pS3C <- all_server_dloads %>%
   ggplot(aes(x = source, y = pdf_downloads, color = covid_preprint)) +
   geom_boxplot(outlier.shape = NA) +
   geom_jitter(aes(fill = factor(covid_preprint)),
-              shape = 21, size = 1, alpha = 0.2,
+              shape = 21, size = 0.2, alpha = 0.2,
               position = position_jitterdodge(jitter.width = 0.5)) + 
-  labs(x = "Server", y = "Total PDF downloads", 
+  labs(x = "Preprint server", y = "Total PDF downloads", 
        fill = "", color = "") +
   scale_y_log10(labels = scales::comma, limits = c(1, 1e6), expand = c(0, 0)) +
-  scale_color_manual(values = c(palette("deep orange"), palette("grey"))) +
-  scale_fill_manual(values = c(palette("deep orange"), palette("grey"))) +
-  ggsave("outputs/figures/partials/preprint_downloads_by_server.png", width = 12, height = 6)
+  scale_color_manual(values = qualitative_hcl(2, palette = "Set2")) +
+  scale_fill_manual(values = qualitative_hcl(2, palette = "Set2")) +
+  ggsave("outputs/figures/partials/Figure_S3E.png", width = 10, height = 5)
+
+# Write figure caption
+caption <- str_wrap("Supplementary Figure 3: [tbc]", width = 125)
+
+# Patchwork
+pS3A + pS3B + pS3C + pS3D + pS3E +
+  plot_layout(nrow = 5) +
+  plot_annotation(caption = caption, tag_levels = "A") +
+  ggsave("outputs/figures/Figure_S3.png", width = 10, height = 12.5)
 
 ```
 
@@ -624,19 +810,18 @@ pS3C <- all_server_dloads %>%
 
 ```{r}
 
-# start date for plots
-start_date <- "2020-01-01"
-
 # Prepare data
 d <- preprint_citations %>%
   inner_join(preprint_altmetrics, by = "doi") %>%
   inner_join(preprints, by = "doi") %>%
+  filter(posted_date >= "2020-01-01") %>%
   mutate(posted_week = floor_date(posted_date, unit = "week", week_start = 1),
          covid_preprint = case_when(
            covid_preprint == T ~ "COVID-19 preprints",
            covid_preprint == F ~ "non-COVID-19 preprints"
-         )) %>%
-  filter(posted_week >= start_date)
+         ))
+
+# Panel A: Citations per preprint (COVID vs non-COVID)
 
 p4A <- d %>%
   ggplot(aes(x = covid_preprint, y = citations + 1, color = covid_preprint)) +
@@ -648,7 +833,11 @@ p4A <- d %>%
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   scale_color_manual(values = qualitative_hcl(2, palette = "Set2")) +
   scale_fill_manual(values = qualitative_hcl(2, palette = "Set2")) +
-  theme(axis.text.x = element_blank())
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 12)) +
+  guides(color = FALSE, fill = FALSE) +
+  ggsave("outputs/figures/partials/Figure_4A.png", width = 5, height = 5)
+
+# Panel B: Tweets per preprint (COVID vs non-COVID)
 
 p4B <- d %>%
   ggplot(aes(x = covid_preprint, y = twitter + 1, color = covid_preprint)) +
@@ -660,7 +849,11 @@ p4B <- d %>%
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   scale_color_manual(values = qualitative_hcl(2, palette = "Set2")) +
   scale_fill_manual(values = qualitative_hcl(2, palette = "Set2")) +
-  theme(axis.text.x = element_blank())
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 12)) +
+  guides(color = FALSE, fill = FALSE) +
+  ggsave("outputs/figures/partials/Figure_4B.png", width = 5, height = 5)
+
+# Panel C: News mentions per preprint (COVID vs non-COVID)
 
 p4C <- d %>%
   ggplot(aes(x = covid_preprint, y = news + 1, color = covid_preprint)) +
@@ -672,7 +865,11 @@ p4C <- d %>%
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   scale_color_manual(values = qualitative_hcl(2, palette = "Set2")) +
   scale_fill_manual(values = qualitative_hcl(2, palette = "Set2")) +
-  theme(axis.text.x = element_blank())
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 12)) +
+  guides(color = FALSE, fill = FALSE) +
+  ggsave("outputs/figures/partials/Figure_4C.png", width = 5, height = 5)  
+
+# Panel D: Blog mentions per preprint (COVID vs non-COVID)
 
 p4D <- d %>%
   ggplot(aes(x = covid_preprint, y = blogs + 1, color = covid_preprint)) +
@@ -684,18 +881,18 @@ p4D <- d %>%
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   scale_color_manual(values = qualitative_hcl(2, palette = "Set2")) +
   scale_fill_manual(values = qualitative_hcl(2, palette = "Set2")) +
-  theme(axis.text.x = element_blank())
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 12)) +
+  guides(color = FALSE, fill = FALSE) +
+  ggsave("outputs/figures/partials/Figure_4D.png", width = 5, height = 5)
 
-# Correlation plots
+# Panels E and F: Correlation plots between Citations, tweets, news articles and blogs
 
 covid_usage <- d %>% 
-  filter(posted_date >= "2020-01-01",
-         covid_preprint == "COVID-19 preprints") %>%
+  filter(covid_preprint == "COVID-19 preprints") %>%
   select(citations, twitter, news, blogs)
 
 non_covid_usage <- d %>% 
-  filter(posted_date >= "2020-01-01",
-         covid_preprint == "non-COVID-19 preprints") %>%
+  filter(covid_preprint == "non-COVID-19 preprints") %>%
   select(citations, twitter, news, blogs)
 
 covid_corr <- correlate(covid_usage, method = "spearman") %>%
@@ -723,7 +920,8 @@ p4E <- covid_corr %>%
   guides(fill = guide_colourbar(title.position="top", 
                                 title.hjust = 0.5,
                                 label.position = "bottom",
-                                barwidth = 7))
+                                barwidth = 7)) +
+  ggsave("outputs/figures/partials/Figure_4E.png", width = 5, height = 5)
 
 p4F <- non_covid_corr %>%
   ggplot(aes(x = rows, y = cols, fill = value)) +
@@ -738,24 +936,26 @@ p4F <- non_covid_corr %>%
   guides(fill = guide_colourbar(title.position="top", 
                                 title.hjust = 0.5,
                                 label.position = "bottom",
-                                barwidth = 7))
+                                barwidth = 7)) +
+  ggsave("outputs/figures/partials/Figure_4F.png", width = 5, height = 5)
 
 # Write figure caption
 caption <- str_wrap("Figure 4: Comparison of citations, tweets, mentions in news articles and blogs for COVID-19 and non-COVID-19 preprints posted on bioRxiv and medRxiv between January and April 2020. (A) Citations per preprint. (B) Tweets per preprint. (C) News article mentions per preprint. (D) Blog mentions per preprint. (E) Spearman's correlation matrix between all indicators for COVID-19 preprints. (F) Spearman's correlation matrix between all indicators for non-COVID-19 preprints.", width = 125)
 
 # Patchwork
-p1 <- (p4A + p4B + p4C + p4D) + 
-  plot_layout(ncol = 2, guides = "collect") & theme(legend.position = "bottom")
 
-p2 <- (p4E + p4F) + 
-  plot_layout(ncol = 2, guides = "collect") & theme(plot.margin = margin(0, 0, 0, 0),
-                                                    legend.title = element_text(size = 10),
-                                                    legend.position = "bottom")
+# Manually define layout
+layout <- "
+ABCD
+#EF#
+#GH#
+"
+p <- plot_spacer() + p4A + p4B + plot_spacer() + p4C + p4D + p4E + p4F + 
+  plot_layout(design = layout, guides = "collect") & theme(plot.margin = margin(0, 0, 0, 0),
+                                                           legend.title = element_text(size = 10),
+                                                           legend.position = "bottom")
 
-p <- (p1 / p2) + plot_layout(heights = c(2.5,1))
-
-(plot_spacer() | p | plot_spacer()) +
-  plot_layout(widths = c(0.5, 1, 0.5)) +
+p +
   plot_annotation(caption = caption, tag_levels = "A") +
   ggsave("outputs/figures/Figure_4.png", width = 10, height = 10)
   
@@ -838,8 +1038,8 @@ p5E <- preprints_epi_period %>%
   ggplot(aes(x=covid_preprint, y=prop, fill=covid_preprint, color=covid_preprint)) +
   geom_bar(stat = "identity", position="identity") +
   ylab("Percentage of preprints published") +
-  scale_color_manual(values = c(palette("deep orange"), palette("grey"))) +
-  scale_fill_manual(values = c(palette("deep orange"), palette("grey"))) +
+  scale_color_manual(values = qualitative_hcl(2, palette = "Set2")) +
+  scale_fill_manual(values = qualitative_hcl(2, palette = "Set2")) +
   theme(axis.title.x = element_blank()) +
   guides(fill = FALSE, colour = FALSE) +
   ggsave("outputs/figures/partials/preprint_publishing_percent.png", width = 4, height = 4)
@@ -857,8 +1057,8 @@ pS5F <- preprints_epi_period %>%
   geom_bar(stat = "identity", position="dodge") +
   xlab("Server") +
   ylab("Percentage of preprints published") +
-  scale_color_manual(values = c(palette("deep orange"), palette("grey"))) +
-  scale_fill_manual(values = c(palette("deep orange"), palette("grey"))) +
+  scale_color_manual(values = qualitative_hcl(2, palette = "Set2")) +
+  scale_fill_manual(values = qualitative_hcl(2, palette = "Set2")) +
   theme(legend.title = element_blank()) +
   ggsave("outputs/figures/partials/preprint_publishing_percent_server.png", width = 6, height = 4)
 # Plot custom histogram of time to publishing for COVID-19/non-COVID-19 preprints by period
@@ -882,8 +1082,8 @@ p5D <- bind_rows(preprints_epi_period %>%
   #  facet_wrap(source ~ ., nrow = 2, strip.position = "right") +
   xlab("Time from preprint posting to publication (days)") +
   ylab("Percentage of all preprints") +
-  scale_color_manual(values = c(palette("deep orange"), palette("cyan"), palette("grey"))) +
-  scale_fill_manual(values = c(palette("deep orange"), palette("cyan"), palette("grey"))) +
+  scale_color_manual(values = qualitative_hcl(3, palette = "Set2")) +
+  scale_fill_manual(values = qualitative_hcl(3, palette = "Set2")) +
   theme(legend.title = element_blank()) +
   ggsave("outputs/figures/partials/preprint_publishing_time.png", width = 10, height = 6)
 p5D <- bind_rows(preprints_epi_period %>% 
@@ -906,8 +1106,8 @@ p5D <- bind_rows(preprints_epi_period %>%
   #  facet_wrap(source ~ ., nrow = 2, strip.position = "right") +
   xlab("Time from preprint posting to publication (days)") +
   ylab("Cumulative percentage of all preprints") +
-  scale_color_manual(values = c(palette("deep orange"), palette("cyan"), palette("grey"))) +
-  scale_fill_manual(values = c(palette("deep orange"), palette("cyan"), palette("grey"))) +
+  scale_color_manual(values = qualitative_hcl(3, palette = "Set2")) +
+  scale_fill_manual(values = qualitative_hcl(3, palette = "Set2")) +
   theme(legend.title = element_blank()) +
   ggsave("outputs/figures/partials/preprint_publishing_time_cum.png", width = 10, height = 6)
 # Plot boxes of time to publishing for COVID-19/non-COVID-19 preprints by publisher
@@ -932,8 +1132,8 @@ pS5E <- preprints_epi_period %>%
               position = position_jitterdodge(jitter.width = 0.5)) + 
   labs(x = "Publisher", y = "Time from preprint posting to publication (days)", 
        fill = "", color = "") +
-  scale_color_manual(values = c(palette("deep orange"), palette("grey"))) +
-  scale_fill_manual(values = c(palette("deep orange"), palette("grey"))) +
+  scale_color_manual(values = qualitative_hcl(2, palette = "Set2")) +
+  scale_fill_manual(values = qualitative_hcl(2, palette = "Set2")) +
   ggsave("outputs/figures/partials/preprint_publishing_time_publisher.png", width = 12, height = 6)
 ```
 
