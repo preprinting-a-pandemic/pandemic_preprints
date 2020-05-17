@@ -10,6 +10,8 @@ library(tidyverse)
 library(tidytext)
 library(sentimentr)
 
+preprints <- read_csv("data/preprints_full_20190901_20200430.csv")
+
 ```
 
 # Set up lexicon for sentiment analysis
