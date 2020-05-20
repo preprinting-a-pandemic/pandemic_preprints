@@ -918,6 +918,9 @@ p4F <- non_covid_corr %>%
                                 barwidth = 7)) +
   ggsave("outputs/figures/partials/Figure_4F.png", width = 5, height = 4)
 
+
+
+
 # Patchwork
 # Manually define layout
 layout <- "
@@ -938,7 +941,7 @@ p +
 
 ---- Work in progress: Figure 5 and other stuff (still to clean up) -----
 
-# Twitter word cloud
+# Twitter word cloud & sentiment
 
 ```{r}
 
@@ -978,6 +981,19 @@ wordcloud(words = hashtags_freq$hashtags, freq = hashtags_freq$n,
           scale = c(8, 1), min.freq = 10, max.words = 200, 
           random.order = FALSE, rot.per = 0.5, colors = brewer.pal(8, "Dark2"))
 dev.off()
+
+# Panel I (?): Plot of individual polarity of tweets per top 10 most-tweeted COVID-19 preprints
+preprint_tweets_sent <- read.csv("data/preprint_sentiment_tweets_20190901_20200430.csv") %>%
+    mutate(twitter_rank = factor(twitter_rank, levels=c(1:10)))
+pS4I_tweets <- preprint_tweets_sent %>%
+  ggplot(aes(x = twitter_rank, y = ave_sentiment, colour = qualitative_hcl(2, palette = "Set2")[1], label=title)) +
+  geom_boxplot(outlier.shape = NA) +
+  geom_jitter(aes(fill = qualitative_hcl(2, palette = "Set2")[1]), shape = 21, size = 1, alpha = 0.2,
+              position = position_jitterdodge(jitter.width = 0.4)) + 
+  labs(x = "Ranking (number of tweets)", y = "Tweet sentiment polarity score", 
+       fill = "", color = "") +
+  guides(color = FALSE, fill = FALSE) +
+  ggsave("outputs/figures/partials/Figure_S4I.png", width = 10, height = 6)
 
 ```
 
@@ -1110,6 +1126,18 @@ pS5E <- preprints_epi_period %>%
   scale_color_manual(values = qualitative_hcl(2, palette = "Set2")) +
   scale_fill_manual(values = qualitative_hcl(2, palette = "Set2")) +
   ggsave("outputs/figures/partials/preprint_publishing_time_publisher.png", width = 12, height = 6)
+# Panel E (?): Plot of individual polarity of comments per top 10 most-commented COVID-19 preprints
+preprint_comments_sent <- read.csv("data/preprint_sentiment_comments_20190901_20200430.csv") %>%
+  mutate(comment_rank = factor(comment_rank, levels=c(1:10)))
+pS5E_comments <- preprint_comments_sent %>%
+  ggplot(aes(x = comment_rank, y = ave_sentiment, colour = qualitative_hcl(2, palette = "Set2")[1], label=title)) +
+  geom_boxplot(outlier.shape = NA) +
+  geom_jitter(aes(fill = qualitative_hcl(2, palette = "Set2")[1]), shape = 21, size = 1, alpha = 0.2,
+              position = position_jitterdodge(jitter.width = 0.4)) + 
+  labs(x = "Ranking (number of comments)", y = "Comment sentiment polarity score", 
+       fill = "", color = "") +
+  guides(color = FALSE, fill = FALSE) +
+  ggsave("outputs/figures/partials/Figure_S5E.png", width = 10, height = 6)
 ```
 
 # Science focus of senior author
@@ -1132,14 +1160,8 @@ preprint_author_last %<>% left_join(preprints_all %>%
   rename_at(vars(contains(".y")), ~ gsub("\\.y","_previous",.)) %>% 
   mutate(category_covid = tolower(category_covid), category_previous = tolower(category_previous)) %>%
   ungroup
-# Append to list of preprints
-preprints %<>%
-  left_join(preprint_citation_lookup, by = "doi") %>%
-  left_join(published_citation_lookup, by = "published_doi") %>% 
-  replace_na(list(preprint_citations = 0, published_citations = 0)) %>%
-  mutate(total_citations = preprint_citations + published_citations)
 # Plot alluvial diagram
-p5A <- ggplot(data = preprint_author_last %>% 
+p5C <- ggplot(data = preprint_author_last %>% 
                 filter(!is.na(category_previous)) %>% 
                 select(category_covid, category_previous) %>% 
                 plyr::count() %>%
@@ -1150,12 +1172,14 @@ p5A <- ggplot(data = preprint_author_last %>%
   xlab("Preprint categorisation") +
   ylab("Frequency") +
   geom_alluvium(aes(fill=category_previous), reverse=TRUE) +
-  geom_stratum(reverse=TRUE) + 
-  geom_text(size = 3.2, stat = "stratum", label.strata = TRUE, reverse=TRUE, size=0.8) +
-  #  geom_text(aes(label = freq), color="gray50", nudge_x=0.23, stat = "alluvium", reverse = TRUE) +
-  geom_text(aes(label = freq), size = 3.2, color="gray30", nudge_x=0.14, stat = "stratum", reverse = TRUE) +
+  geom_stratum(reverse=TRUE, color = "grey") + 
+  geom_text(size = 2.6, stat = "stratum", label.strata = TRUE, reverse=TRUE) +
+  # geom_text(aes(label = freq), color="gray50", nudge_x=0.23, stat = "alluvium", reverse = TRUE) +
+  # geom_text(aes(label = freq), size = 2.5, color="gray30", nudge_x=0.14, stat = "stratum", reverse = TRUE) +
+  # scale_fill_manual(values = qualitative_hcl(15, palette = "Set2")) +
   guides(fill=FALSE) +
-  theme_bw() +
-  ggsave("outputs/figures/partials/preprint_science_focus.png", width = 8, height = 10)
-
+  theme(axis.title.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks.y=element_blank()) +
+  ggsave("outputs/figures/partials/Figure_5C.png", width = 5, height = 8)
 ```
