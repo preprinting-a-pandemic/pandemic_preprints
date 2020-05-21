@@ -321,7 +321,7 @@ preprints_full <- preprints %>%
     )
 ```
 
-# Preprint Word Counts
+# Preprint Word and Reference Counts
 
 ```{r}
 
@@ -410,8 +410,7 @@ getWordCounts <- function(doi) {
 getWordCountsSafely <- safely(getWordCounts)
 
 biorxiv_preprints <- preprints %>% 
-  filter(posted_date >= "2020-01-01", 
-         source == "biorxiv")
+  filter(source == "biorxiv")
 
 # set counter for progress bar
 pb <- progress_estimated(length(biorxiv_preprints$doi))
@@ -420,11 +419,16 @@ word_counts <- map(biorxiv_preprints$doi, ~ getWordCountsSafely(.))
 
 word_counts_df <- map_dfr(word_counts, ~ tibble(doi = .$result$doi,
                                                 n_words = .$result$word_count,
-                                                n_refs = .$result$ref_count))
+                                                n_refs = .$result$ref_count)) %>%
+# remove cases where word and ref counts are zero - these are the result of a
+# full text not being available (e.g. if a new version is posted before the initial
+# version has had a full text added)
+  filter(n_words != 0,
+         n_refs != 0)
 
 # Merge with other preprint data
 preprints_full <- preprints_full %>%
-  left_join(df, by = "doi") %>%
+  left_join(word_counts_df, by = "doi") %>%
   select(source:n_versions, n_words, n_refs, license:published_best_oa_license)
   
 ```
@@ -436,5 +440,3 @@ preprints_full <- preprints_full %>%
 write_csv(preprints_full, "data/preprints_full_20190901_20200430.csv")
 
 ```
-
-
