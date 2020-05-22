@@ -15,7 +15,7 @@ library(magrittr)
 
 ```{r}
 
-preprints <- read_csv("data/preprint_details.csv")
+preprints <- read_csv("data/preprints_full_20190901_20200430.csv")
 
 # Read in Johns Hopkins global case time series data (reference: Dong E, Du H, Gardner L. An interactive web-based dashboard to track COVID-19 in real time. Lancet Infect Dis)
 
