@@ -89,7 +89,6 @@ journal_articles <- read_csv("data/journal_articles_20200101_20200430.csv")
 # Figure 1: Development of COVID-19, journal articles and preprints over time
 
 ```{r}
-
 # Panel A: Development of COVID-19 cases and deaths
 
 # Define text and coordinates for annotations
@@ -194,10 +193,46 @@ p1C <- preprints_other %>%
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   ggsave("outputs/figures/partials/Figure_1C.png", width = 10, height = 4)
 
+# Panel D: Publishing developments
+
+# Next time just make an image somewhere else and insert to the figure with ggdraw...this was too much
+
+d <- tibble(
+  event_date = c("2020-01-31",
+                 "2020-03-13",
+                 "2020-03-16",
+                 "2020-03-25",
+                 "2020-04-27"),
+  event_name = c("Call for researchers, journals and publishers to rapidly and openly share COVID-19 findings[23]",
+                 "Science leaders ask publishers to make COVID content open and re-usable[24]", "Over 30 publishers agree to make COVID-19 content freely accessible via PubMed[25]", 
+                 "eLife alters peer review policies in light of COVID-19[26]", 
+                 "OASPA issue open letter of intent to maximise efficiency of peer-review for COVID-19 work[27]"),
+  x_position = c(0,-6,0,6,0),
+  y_position = c(-1,0.8,-0.8,0.6,1),
+  direction = c(-1, 1, -1, 1, 1),
+  label_x_position = c(-4,4,-4,4,4)) %>%
+  mutate(event_date = ymd(event_date),
+         event_name = factor(event_name))
+
+p1D <- ggplot(d) +
+geom_text( aes(x = (event_date + x_position), y = (direction + y_position), label = str_wrap(event_name, 22)), size = 3) +
+  geom_hline(yintercept = 0, size = 1) +
+  geom_segment(aes(x = event_date, y = direction, xend = event_date, yend = 0)) +
+  geom_point(aes(x = event_date, y = 0), shape = 21, fill = "grey90", color = "grey50", size = 3)  +
+  geom_text(data = d, aes(x = (event_date + label_x_position), y = (direction*0.5), label = event_date), size = 2, angle = 45, color = "grey25") +
+  scale_y_continuous(limits = c(-2.75, 2.75)) +
+  scale_x_date(limits = c(ymd("2020-01-01"), ymd("2020-05-15"))) +
+  labs(y = "", x = "") +
+  theme(axis.text = element_blank(),
+        plot.background = element_blank(),
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank()) +
+  ggsave("outputs/figures/partials/Figure_1D.png", width = 10, height = 5)
+
 # Patchwork
-p1A + p1B + p1C + plot_layout(ncol = 1) +
+p1A + p1B + p1C + p1D + plot_layout(ncol = 1, heights = c(1,1,1,1.5)) +
   plot_annotation(tag_levels = "A") +
-  ggsave("outputs/figures/Figure_1.png", width = 10, height = 8)
+  ggsave("outputs/figures/Figure_1.png", width = 10, height = 12)
 
 ```
 
@@ -963,6 +998,8 @@ library(wordcloud2)
 library("htmlwidgets")
 library("webshot")
 #webshot::install_phantomjs()
+library(eulerr)
+library(cowplot)
 
 # Read tweet data (not shared publicly at the moment)
 tweets <- read_csv("data/preprint_tweets_20190901_20200430.csv")
@@ -1066,8 +1103,6 @@ purrr::walk2(c(1,5,7), c("S4E", "S4G", "S4I"), plotDistributionForPreprint)
 # Generate a Venn diagram of overlap between the top-10 most tweeted, most mentioned
 # in news and blogs, and most cited. Here we use the eulerr package
 
-library(eulerr)
-
 top_twitter <- preprints %>%
   inner_join(preprint_altmetrics, by = "doi") %>%
   filter(covid_preprint == T) %>%
@@ -1126,7 +1161,7 @@ pS4C <- preprint_tweets_sent %>%
   scale_y_continuous(limits = c(-2.5, 5)) +
   ggsave("outputs/figures/partials/Figure_S4C.png", width = 10, height = 5)
 
-# Now we fit all the PNG files together. Some manual adjustments are necessary
+# Now we fit all the PNG files together. Some manual adjustments may be necessary
 
 pS4A <- ggdraw() +
   draw_image("outputs/figures/partials/Figure_S4A.png") +
@@ -1309,16 +1344,17 @@ p5E <- preprint_changes %>%
   ungroup %>%
   ggplot(aes(x = abstract_change, y = proportion, fill = covid_preprint)) +
   geom_col(position = "dodge", color = "grey50", size = 0.25) +
-  labs(title = "Abstract change", x="", y = "% of preprints", fill = "") +
+  labs(title = "Change in abstract", x="", y = "% of preprints", fill = "") +
   scale_fill_manual(values = qualitative_hcl(n = 2, palette = "Set2")) +
   scale_x_discrete(labels = function(x) str_wrap(x, width = 25)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1),
-        legend.position = "none") +
+        legend.position = "none",
+        plot.title = element_text(size = 10)) +
   ggsave("outputs/figures/partials/Figure_5E.png", width = 5, height = 4) 
 
 # Panel F: Change in main body between preprint and published paper
 
-p5F <- preprint_change %>%
+p5F <- preprint_changes %>%
   rename(change_outcomes = starts_with("Does the change between preprint and paper in the main figures (including tables) reflect a change in content or outcomes?")) %>%
   mutate(covid_preprint = case_when(
     covid_preprint == T ~ "COVID preprint",
@@ -1336,11 +1372,12 @@ p5F <- preprint_change %>%
   ungroup %>%
   ggplot(aes(x = change_outcomes, y = proportion, fill = covid_preprint)) +
   geom_col(position = "dodge", color = "grey50", size = 0.25) +
-  labs(title = "Main body change", x = "", y = "% of preprints", fill = "") +
+  labs(title = "Change in figures and tables", x = "", y = "% of preprints", fill = "") +
   scale_fill_manual(values = qualitative_hcl(n = 2, palette = "Set2")) +
   scale_x_discrete(labels = function(x) str_wrap(x, width = 25)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1),
-        legend.position = "none") +
+        legend.position = "none",
+        plot.title = element_text(size = 10)) +
   ggsave("outputs/figures/partials/Figure_5F.png", width = 5, height = 4) 
 
 # Patchwork
@@ -1584,254 +1621,3 @@ pS5A + pS5B + pS5C + pS5D + pS5E + pS5F + pS5G + pS5H +
     ggsave("outputs/figures/Figure_S5.png", width = 10, height = 15)
 
 ```
-
-
-
-
----- TEMPORARY STUFF TO BE CLEANED UP -----
-
-# Twitter word cloud & sentiment
-
-```{r}
-
-library(wordcloud)
-
-preprints <- read_csv("data/preprints_20190901_20200430.csv")
-preprint_altmetrics <- read_csv("data/preprint_altmetrics_20190901_20200430.csv")
-tweets <- read_csv("data/preprint_tweets_20190901_20200430.csv")
-
-# Get top-10 most tweeted covid-19 preprints
-top_preprints <- preprints %>%
-  inner_join(preprint_altmetrics, by = "doi") %>%
-  filter(covid_preprint == T) %>%
-  top_n(10, twitter) %>%
-  pull(doi)
-
-# Find hashtags associated with top-10 most tweeted covid-19 preprints
-hashtags <- tweets %>%
-  filter(doi %in% top_preprints) %>%
-  select(hashtags) %>%
-  na.omit() %>%
-  pull(hashtags)
-
-# Expand comma-separated values
-hashtags <- str_trim(unlist(strsplit(hashtags, ",")))
-
-# Clean up and generate hashtags frequency table
-hashtags_freq <- tibble(hashtags = hashtags) %>%
-  mutate(hashtags = str_remove_all(hashtags, "[^a-zA-Z0-9]"), # remove special characters
-         hashtags = str_to_lower(hashtags)) %>% # convert all hashtags to lowercase
-  filter(!hashtags %in% c("", "covid19", "coronavirus")) %>% # remove empty hashtags and specific keywords
-  count(hashtags)
-
-# Generate word cloud and save to png
-png("outputs/figures/preprints_top10_hashtags.png", width = 10, height = 10, units = "in", res = 300)
-wordcloud(words = hashtags_freq$hashtags, freq = hashtags_freq$n, 
-          scale = c(8, 1), min.freq = 10, max.words = 200, 
-          random.order = FALSE, rot.per = 0.5, colors = brewer.pal(8, "Dark2"))
-dev.off()
-
-# Panel I (?): Plot of individual polarity of tweets per top 10 most-tweeted COVID-19 preprints
-preprint_tweets_sent <- read.csv("data/preprint_sentiment_tweets_20190901_20200430.csv") %>%
-    mutate(twitter_rank = factor(twitter_rank, levels=c(1:10)))
-pS4I_tweets <- preprint_tweets_sent %>%
-  ggplot(aes(x = twitter_rank, y = ave_sentiment, colour = qualitative_hcl(2, palette = "Set2")[1], label=title)) +
-  geom_boxplot(outlier.shape = NA) +
-  geom_jitter(aes(fill = qualitative_hcl(2, palette = "Set2")[1]), shape = 21, size = 1, alpha = 0.2,
-              position = position_jitterdodge(jitter.width = 0.4)) + 
-  labs(x = "Ranking (number of tweets)", y = "Tweet sentiment polarity score", 
-       fill = "", color = "") +
-  guides(color = FALSE, fill = FALSE) +
-  ggsave("outputs/figures/partials/Figure_S4I.png", width = 10, height = 6)
-
-```
-
-# Time until publication
-
-```{r}
-# Prepare data
-# Identify proportion of preprints that are published
-preprints_epi_period %>% filter(source == "biorxiv") %>% with(table(covid_preprint, is_published)) %>% prop.table(margin = 1)*100 %>% round(3)
-preprints_epi_period %>% filter(source == "medrxiv") %>% with(table(covid_preprint, is_published)) %>% prop.table(margin = 1)*100 %>% round(3)
-# Calculate time to publishing
-preprints_epi_period %<>% mutate(time_to_publish = as.Date(published_date) - as.Date(posted_date))
-preprints_control_period %<>% mutate(time_to_publish = as.Date(published_date) - as.Date(posted_date))
-# Identify any preprints published before or at same time as preprint upload
-publish_before_preprint <- preprints %>% filter(time_to_publish <= 0)
-# Identify publishers with at least 10 published preprints across entire dataset
-publisher_list <- preprints_epi_period %>% 
-  filter(!is.na(published_publisher) & published_publisher!= "American Chemical Society (ACS)") %>%     # remove ACS as no COVID-19 preprints
-  group_by(published_publisher) %>% 
-  filter(n() > 10) %>%
-  pull(published_publisher) %>%
-  unique()
-# Plot simple bar of proportion published
-p5E <- preprints_epi_period %>% 
-  mutate(covid_preprint = case_when(
-    covid_preprint == T ~ "COVID-19 preprints",
-    covid_preprint == F ~ "non-COVID-19 preprints\nJan - Apr")
-  ) %>% 
-  group_by(covid_preprint) %>%
-  count(is_published) %>%
-  mutate(prop = n*100 / sum(n)) %>%
-  filter(is_published == TRUE) %>%
-  ggplot(aes(x=covid_preprint, y=prop, fill=covid_preprint, color=covid_preprint)) +
-  geom_bar(stat = "identity", position="identity") +
-  ylab("Percentage of preprints published") +
-  scale_color_manual(values = qualitative_hcl(2, palette = "Set2")) +
-  scale_fill_manual(values = qualitative_hcl(2, palette = "Set2")) +
-  theme(axis.title.x = element_blank()) +
-  guides(fill = FALSE, colour = FALSE) +
-  ggsave("outputs/figures/partials/preprint_publishing_percent.png", width = 4, height = 4)
-# Plot simple bar of proportion published by server
-pS5F <- preprints_epi_period %>% 
-  mutate(covid_preprint = case_when(
-    covid_preprint == T ~ "COVID-19 preprints",
-    covid_preprint == F ~ "non-COVID-19 preprints\nJan - Apr")
-  ) %>% 
-  group_by(covid_preprint, source) %>%
-  count(is_published) %>%
-  mutate(prop = n*100 / sum(n)) %>%
-  filter(is_published == TRUE) %>%
-  ggplot(aes(x=source, y=prop, fill=covid_preprint, color=covid_preprint)) +
-  geom_bar(stat = "identity", position="dodge") +
-  xlab("Server") +
-  ylab("Percentage of preprints published") +
-  scale_color_manual(values = qualitative_hcl(2, palette = "Set2")) +
-  scale_fill_manual(values = qualitative_hcl(2, palette = "Set2")) +
-  theme(legend.title = element_blank()) +
-  ggsave("outputs/figures/partials/preprint_publishing_percent_server.png", width = 6, height = 4)
-# Plot custom histogram of time to publishing for COVID-19/non-COVID-19 preprints by period
-p5D <- bind_rows(preprints_epi_period %>% 
-                   mutate(covid_preprint = case_when(
-                     covid_preprint == T ~ "COVID-19 preprints",
-                     covid_preprint == F ~ "non-COVID-19 preprints\nJan - Apr")
-                   ),
-                 preprints_control_period %>% 
-                   mutate(covid_preprint = "non-COVID-19 preprints\nSep - Dec")
-) %>%
-  filter(time_to_publish > 0|is.na(time_to_publish)) %>%
-  mutate(pub_bracket = cut(as.numeric(time_to_publish), seq(0,240,by=10), labels=seq(0,230,by=10))) %>%
-  group_by(covid_preprint) %>%
-  count(pub_bracket) %>%
-  mutate(prop = n*100 / sum(n)) %>%
-  filter(!is.na(pub_bracket)) %>%
-  ggplot(aes(x=pub_bracket, y=prop, fill=covid_preprint, color=covid_preprint)) +
-  geom_bar(alpha=0.2, width=1, stat = "identity", position="identity") +
-  scale_x_discrete(labels=c("0","","","","","50","","","","","100","","","","","150","","","","","200","","","")) +
-  #  facet_wrap(source ~ ., nrow = 2, strip.position = "right") +
-  xlab("Time from preprint posting to publication (days)") +
-  ylab("Percentage of all preprints") +
-  scale_color_manual(values = qualitative_hcl(3, palette = "Set2")) +
-  scale_fill_manual(values = qualitative_hcl(3, palette = "Set2")) +
-  theme(legend.title = element_blank()) +
-  ggsave("outputs/figures/partials/preprint_publishing_time.png", width = 10, height = 6)
-p5D <- bind_rows(preprints_epi_period %>% 
-                   mutate(covid_preprint = case_when(
-                     covid_preprint == T ~ "COVID-19 preprints",
-                     covid_preprint == F ~ "non-COVID-19 preprints\nJan - Apr")
-                   ),
-                 preprints_control_period %>% 
-                   mutate(covid_preprint = "non-COVID-19 preprints\nSep - Dec")
-) %>%
-  filter(time_to_publish > 0|is.na(time_to_publish)) %>%
-  count(covid_preprint, time_to_publish) %>%
-  complete(time_to_publish, nesting(covid_preprint), fill = list(n = 0)) %>%
-  group_by(covid_preprint) %>%
-  arrange(time_to_publish) %>%
-  mutate(cumulative_prop = cumsum(n)*100/sum(n)) %>%
-  ggplot(aes(x = time_to_publish, y = cumulative_prop, fill = covid_preprint)) +
-  geom_area(color = "#ffffff", size = 0.5, position = "identity", alpha = 0.2) +
-  scale_y_continuous(limits = c(0,21)) +
-  #  facet_wrap(source ~ ., nrow = 2, strip.position = "right") +
-  xlab("Time from preprint posting to publication (days)") +
-  ylab("Cumulative percentage of all preprints") +
-  scale_color_manual(values = qualitative_hcl(3, palette = "Set2")) +
-  scale_fill_manual(values = qualitative_hcl(3, palette = "Set2")) +
-  theme(legend.title = element_blank()) +
-  ggsave("outputs/figures/partials/preprint_publishing_time_cum.png", width = 10, height = 6)
-# Plot boxes of time to publishing for COVID-19/non-COVID-19 preprints by publisher
-pS5E <- preprints_epi_period %>% 
-  filter(time_to_publish > 0 & published_publisher %in% publisher_list) %>%
-  mutate(covid_preprint = case_when(
-    covid_preprint == T ~ "COVID-19 preprints",
-    covid_preprint == F ~ "non-COVID-19 preprints"),
-    published_publisher = case_when(
-      published_publisher == "MDPI AG" ~ "MDPI",
-      published_publisher == "Oxford University Press (OUP)" ~ "OUP",
-      published_publisher == "Elsevier BV" ~ "Elsevier",
-      published_publisher == "American Society for Microbiology" ~ "ASM",
-      published_publisher == "Public Library of Science (PLoS)" ~ "PLoS",
-      published_publisher == "Springer Science and Business Media LLC" ~ "Springer",
-      published_publisher == "Wiley" ~ "Wiley")
-  ) %>%
-  ggplot(aes(x = published_publisher, y = time_to_publish, color = covid_preprint)) +
-  geom_boxplot(outlier.shape = NA) +
-  geom_jitter(aes(fill = factor(covid_preprint)),
-              shape = 21, size = 1, alpha = 0.2,
-              position = position_jitterdodge(jitter.width = 0.5)) + 
-  labs(x = "Publisher", y = "Time from preprint posting to publication (days)", 
-       fill = "", color = "") +
-  scale_color_manual(values = qualitative_hcl(2, palette = "Set2")) +
-  scale_fill_manual(values = qualitative_hcl(2, palette = "Set2")) +
-  ggsave("outputs/figures/partials/preprint_publishing_time_publisher.png", width = 12, height = 6)
-# Panel E (?): Plot of individual polarity of comments per top 10 most-commented COVID-19 preprints
-preprint_comments_sent <- read.csv("data/preprint_sentiment_comments_20190901_20200430.csv") %>%
-  mutate(comment_rank = factor(comment_rank, levels=c(1:10)))
-pS5E_comments <- preprint_comments_sent %>%
-  ggplot(aes(x = comment_rank, y = ave_sentiment, colour = qualitative_hcl(2, palette = "Set2")[1], label=title)) +
-  geom_boxplot(outlier.shape = NA) +
-  geom_jitter(aes(fill = qualitative_hcl(2, palette = "Set2")[1]), shape = 21, size = 1, alpha = 0.2,
-              position = position_jitterdodge(jitter.width = 0.4)) + 
-  labs(x = "Ranking (number of comments)", y = "Comment sentiment polarity score", 
-       fill = "", color = "") +
-  guides(color = FALSE, fill = FALSE) +
-  ggsave("outputs/figures/partials/Figure_S5E.png", width = 10, height = 6)
-```
-
-# Science focus of senior author
-
-```{r}
-# For each author, select their chronologically latest COVID-19 preprint
-preprint_author_last <- preprints %>% 
-  filter(covid_preprint == TRUE) %>% 
-  arrange(posted_date) %>% 
-  group_by(author_corresponding) %>% 
-  slice(n())
-# For each author, extract the category of their last preprint
-preprint_author_last %<>% left_join(preprints_all %>% 
-                                      filter(author_corresponding %in% preprint_author_last$author_corresponding & !(doi %in% preprint_author_last$doi)) %>% 
-                                      arrange(posted_date) %>% 
-                                      group_by(author_corresponding) %>% 
-                                      slice(n()),
-                                    by = "author_corresponding") %>%
-  rename_at(vars(contains(".x")), ~ gsub("\\.x","_covid",.)) %>%
-  rename_at(vars(contains(".y")), ~ gsub("\\.y","_previous",.)) %>% 
-  mutate(category_covid = tolower(category_covid), category_previous = tolower(category_previous)) %>%
-  ungroup
-# Plot alluvial diagram
-p5C <- ggplot(data = preprint_author_last %>% 
-                filter(!is.na(category_previous)) %>% 
-                select(category_covid, category_previous) %>% 
-                plyr::count() %>%
-                filter(freq >= 5),
-              aes(axis1 = category_previous, axis2 = category_covid, y = freq)) +
-  scale_x_discrete(limits = c("Previous", "COVID-19"), expand = c(0, 0)) +
-  scale_y_continuous(expand = c(0, 0)) +
-  xlab("Preprint categorisation") +
-  ylab("Frequency") +
-  geom_alluvium(aes(fill=category_previous), reverse=TRUE) +
-  geom_stratum(reverse=TRUE, color = "grey") + 
-  geom_text(size = 2.6, stat = "stratum", label.strata = TRUE, reverse=TRUE) +
-  # geom_text(aes(label = freq), color="gray50", nudge_x=0.23, stat = "alluvium", reverse = TRUE) +
-  # geom_text(aes(label = freq), size = 2.5, color="gray30", nudge_x=0.14, stat = "stratum", reverse = TRUE) +
-  # scale_fill_manual(values = qualitative_hcl(15, palette = "Set2")) +
-  guides(fill=FALSE) +
-  theme(axis.title.y=element_blank(),
-        axis.text.y=element_blank(),
-        axis.ticks.y=element_blank()) +
-  ggsave("outputs/figures/partials/Figure_5C.png", width = 5, height = 8)
-
-```
-
-
