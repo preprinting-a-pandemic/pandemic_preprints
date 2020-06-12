@@ -1272,22 +1272,33 @@ preprint_author_last_covid <- preprints %>%
   arrange(posted_date) %>% 
   group_by(author_corresponding) %>% 
   slice(n()) %>%
-  select(author_corresponding, category) %>%
-  rename(category_covid = category)
+  select(author_corresponding, category, posted_date) %>%
+  rename(category_covid = category,
+         posted_covid = posted_date)
 
+# For each author, select their non-COVID-19 preprints
 preprint_author_last_non_covid <- preprints_all %>% 
   filter(covid_preprint == F) %>% 
   arrange(posted_date) %>% 
   group_by(author_corresponding) %>% 
-  slice(n()) %>%
-  select(author_corresponding, category) %>%
-  rename(category_previous = category)
+  select(author_corresponding, category, posted_date) %>%
+  rename(category_previous = category,
+         posted_previous = posted_date)
 
+# Filter to non-COVID-19 preprints uploaded before the latest COVID-19 preprint and select the chronologically latest
 preprint_author_last <- preprint_author_last_covid %>%
-  inner_join(preprint_author_last_non_covid, by = "author_corresponding")
+  inner_join(preprint_author_last_non_covid, by = "author_corresponding") %>%
+  filter(posted_covid >= posted_previous) %>%
+  slice(n()) %>%
+  mutate(category_covid = tolower(category_covid),
+         category_previous = tolower(category_previous))
+
+total_cats <- c(preprint_author_last$category_covid, preprint_author_last$category_previous) %>% unique %>% sort
 
 # Plot alluvial diagram
 p5C <- preprint_author_last %>%
+  mutate(category_covid = factor(category_covid, levels = total_cats),
+         category_previous = factor(category_previous, levels = total_cats)) %>%
   group_by(category_covid, category_previous) %>%
   summarize(freq = n()) %>%
   ungroup() %>%
@@ -1303,7 +1314,9 @@ p5C <- preprint_author_last %>%
   guides(fill = FALSE) +
   theme(axis.title.y = element_blank(),
         axis.text.y = element_blank(),
-        axis.ticks.y = element_blank()) +
+        axis.ticks.y = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank()) +
   ggsave("outputs/figures/partials/Figure_5C.png", width = 5, height = 8)
 
 # Panel D: Count of comments per preprint
