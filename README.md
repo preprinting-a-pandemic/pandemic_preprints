@@ -1,4 +1,4 @@
-This repository contains code and datasets for the study "Preprinting a pandemic: the role of preprints in the 2020 COVID-19 pandemic" [work in progress - add link here when published].
+This repository contains code and datasets for the study "Preprinting a pandemic: the role of preprints in the COVID-19 pandemic" [currently available from bioRxiv: [https://www.biorxiv.org/content/10.1101/2020.05.22.111294v1](https://www.biorxiv.org/content/10.1101/2020.05.22.111294v1)].
 
 This README contains an overview of the different files and datasets contained in this repository. The full methodology is documented in the above linked preprint.
 
