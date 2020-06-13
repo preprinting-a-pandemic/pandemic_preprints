@@ -155,7 +155,7 @@ preprint_article_links <- preprints %>%
   select(doi, title, published_doi) %>%
   stringdist_inner_join(journal_articles, 
                         by = "title",
-                        max_dist = 20,
+                        max_dist = 15,
                         method = "lv",
                         ignore_case = TRUE,
                         distance_col = "match_distance")
@@ -204,7 +204,7 @@ preprints <- preprints %>%
  
 published_dois <- preprints %>% filter(is_published == T) %>% pull(published_doi)
 
-#published_articles_data <- rcrossref::cr_works_(published_dois, parse = T)
+published_articles_data <- rcrossref::cr_works_(published_dois, parse = T)
 
 parsePublishedArticleData <- function(item) {
   tibble(
@@ -227,16 +227,22 @@ published_articles <- map_df(published_articles_data, parsePublishedArticleData)
 
 ```{r}
 
-preprints <- preprints %>% 
-  left_join(published_articles, by = "published_doi") %>%
-  mutate(delay_in_days = difftime(published_date,  posted_date, units = c("days"))) %>%
-  mutate(is_published = case_when(
-      is.na(published_date) ~ F,
+preprints <- preprints %>%
+  mutate(
+    is_published = case_when(
+      !published_doi %in% published_articles$published_doi ~ F,
       T ~ T
-    ), is_published = case_when(
-      is.na(published_date) ~ F,
-      T ~ T
+    ),
+    published_doi = case_when(
+      !published_doi %in% published_articles$published_doi ~ NA_character_,
+      T ~ published_doi
+    ),
+    published_link_type = case_when(
+      !published_doi %in% published_articles$published_doi ~ NA_character_,
+      T ~ published_link_type
     )) %>%
+  left_join(published_articles, by = "published_doi") %>%
+  mutate(delay_in_days = as.numeric(ymd(published_date) -  ymd(posted_date))) %>%
   distinct()
 
 ```
