@@ -10,6 +10,7 @@ library(tidyverse)
 library(rcrossref)
 library(roadoi)
 library(rvest)
+library(fuzzyjoin)
 
 ```
 
@@ -21,7 +22,7 @@ library(rvest)
 # Note that the API allows querying of both bioRxiv and medRxiv via the 
 # 'server' parameter (although this is not documented)
 
-max_results_per_page <- 100
+max_results_per_page <- 100 # max allowable number of results per page
 base_url <- "https://api.biorxiv.org/details/"
 
 start <- "2013-11-01"
@@ -36,22 +37,31 @@ getPreprintData <- function(server) {
   
   # Determine total number of results and required iterations for paging
   total_results <- content$messages[[1]]$total
-  iterations <- ceiling(total_results / max_results_per_page) - 1
+  pages <- ceiling(total_results / max_results_per_page) - 1
   
   data <- content$collection
-
-  for (i in 1:iterations) {
-    cursor <- i * max_results_per_page
+  
+  for (i in 1:pages) {
+    cursor <- format(i * max_results_per_page, scientific = FALSE) # otherwise page 100000 becomes 1e05, which the api does not recognise
     url <- paste0(base_url, server, "/", start, "/", end, "/", cursor)
-    request <- httr::GET(url)
+    request <- httr::RETRY("GET", url, times = 5, pause_base = 1, pause_cap = 60) # retry if server error
     content <- httr::content(request, as = "parsed")
-    data <- c(data, content$collection)
+    if(content$messages[[1]]$status == "ok") {
+      data <- c(data, content$collection)
+    } else {
+      data <- c(data, list("error" = content$messages[[1]]$status))
+    }
     Sys.sleep(1) # don't hit the API too hard
   }
   return(data)
 }
 
-preprint_data <- purrr::map(c("medrxiv", "biorxiv"), getPreprintData)
+preprint_data <- purrr::map(c("biorxiv", "medrxiv"), getPreprintData)
+
+```
+
+
+```{r}
 
 parsePreprintData <- function(item) {
   tibble(
@@ -131,13 +141,70 @@ preprints <- preprints_all %>%
 
 ```
 
-# Published article metadata via Crossref
+# Additional preprint-publisher pairs
+
+Some preprint-published pairs are given via the bioRxiv API (i.e. referring to the publication notices on the bioRxiv website. We take an additional step to retrieve publication pairs), but these links are incomplete. Here we take another step to increase the number of links by fuzzy matching of preprint titles with titles from our journal articles dataset. We use the R package "fuzzyjoin", using the Levenshtein distance method with a maximum distance of X.
 
 ```{r}
 
+journal_articles <- read_csv("data/journal_articles_20200101_20200531.csv") %>%
+  select(doi, title)
+
+preprint_article_links <- preprints %>% 
+  filter(covid_preprint == T) %>% 
+  select(doi, title, published_doi) %>%
+  stringdist_inner_join(journal_articles, 
+                        by = "title",
+                        max_dist = 20,
+                        method = "lv",
+                        ignore_case = TRUE,
+                        distance_col = "match_distance")
+
+# Parameters for match distance and title length are manually tuned by comparing results from fuzzy matching to those derived from bioRxiv publication notices. A match distance of 10 appears good, with a minimum title length of 30 (short titles seem to cause problems)
+preprint_article_links <- preprint_article_links %>%
+  filter(match_distance <= 10,
+         nchar(title.y) >= 30,
+         is.na(published_doi)) %>%
+  # only keep articles matched to a single distinct published article
+  group_by(doi.x) %>%
+  mutate(n = n()) %>%
+  ungroup() %>%
+  filter(n == 1) %>%
+  select(doi.x, doi.y) %>%
+  rename(doi = doi.x,
+         published_doi = doi.y)
+
+```
+
+# Merge fuzzy links to preprint dataset
+
+```{r}
+
+preprints <- preprints %>%  
+  left_join(preprint_article_links, by = "doi") %>%
+  mutate(
+    published_link_type.x = case_when(
+      !is.na(published_doi.x) ~ "publication_notice",
+      T ~ NA_character_
+    ),
+    published_link_type.y = case_when(
+      !is.na(published_doi.y) ~ "title_match",
+      T ~ NA_character_
+    )) %>%
+  mutate(published_doi = coalesce(published_doi.x, published_doi.y),
+         published_link_type = coalesce(published_link_type.x, published_link_type.y)) %>%
+  select(-published_doi.x, -published_doi.y, -published_link_type.x, - published_link_type.y) %>%
+  mutate(is_published = !is.na(published_doi))
+
+```
+
+# Published article metadata via Crossref
+
+```{r}
+ 
 published_dois <- preprints %>% filter(is_published == T) %>% pull(published_doi)
 
-published_articles_data <- rcrossref::cr_works_(published_dois, parse = T)
+#published_articles_data <- rcrossref::cr_works_(published_dois, parse = T)
 
 parsePublishedArticleData <- function(item) {
   tibble(
@@ -145,13 +212,32 @@ parsePublishedArticleData <- function(item) {
     published_title = item$message$title[[1]],
     published_date = lubridate::date(item$message$created$`date-time`),
     published_abstract = if(length(item$message$abstract)) item$message$abstract else NA_character_,
-    published_journal = item$message$`container-title`[[1]],
+    published_journal = if(length(item$message$`container-title`)) item$message$`container-title`[[1]] else NA_character_,
     published_publisher = item$message$publisher
   )
 }
 
 published_articles <- map_df(published_articles_data, parsePublishedArticleData) %>%
-  mutate(published_doi = str_trim(str_to_lower(published_doi)))
+  mutate(published_doi = str_trim(str_to_lower(published_doi))) %>%
+  filter(published_date <= "2020-05-31") # set maximum publication date of published articles
+
+```
+
+# Merge preprints and published articles data
+
+```{r}
+
+preprints <- preprints %>% 
+  left_join(published_articles, by = "published_doi") %>%
+  mutate(delay_in_days = difftime(published_date,  posted_date, units = c("days"))) %>%
+  mutate(is_published = case_when(
+      is.na(published_date) ~ F,
+      T ~ T
+    ), is_published = case_when(
+      is.na(published_date) ~ F,
+      T ~ T
+    )) %>%
+  distinct()
 
 ```
 
@@ -167,13 +253,23 @@ published_articles_oa <- roadoi::oadoi_fetch(dois = published_dois,
   mutate(
     published_doi = doi,
     published_article_is_oa = is_oa,
-    published_best_oa_location = map_chr(best_oa_location, ~ if(length(.$host_type)) .$host_type else NA),
+    published_best_oa_location = map_chr(best_oa_location, function(x) if(length(x$host_type)) x$host_type else NA),
     published_journal_is_oa = journal_is_oa,
-    published_best_oa_license = map_chr(best_oa_location, ~ if(length(.$license)) .$license else NA)
+    published_best_oa_license = map_chr(best_oa_location, function(x) if(length(x$license)) x$license else NA)
   ) %>%
   select(published_doi, published_article_is_oa, published_journal_is_oa,
          published_best_oa_location, published_best_oa_license) %>%
   mutate(published_doi = str_trim(str_to_lower(published_doi)))
+
+```
+
+# Merge preprints and OA data
+
+```{r}
+
+preprints <- preprints %>% 
+  left_join(published_articles_oa, by = "published_doi") %>%
+  distinct()
 
 ```
 
@@ -230,6 +326,7 @@ a %>%
 
 
 ```{r}
+
 # See https://github.com/ror-community/ror-api
 # The full string of the institution name is passed to the ROR institution
 # matching API. The API returns a list of possible matches, including a 
@@ -277,15 +374,12 @@ affiliations <- map2_df(preprints$doi,
 
 ```
 
-# Merge preprint and published articles dataset
+# Merge authors data
 
 ```{r}
 
-preprints_full <- preprints %>%
-  #left_join(published_articles, by = "published_doi") %>%
-  #left_join(published_articles_oa, by = "published_doi") %>%
+preprints <- preprints %>%
   left_join(affiliations, by = "doi") %>%
-  mutate(delay_in_days = difftime(published_date,  posted_date, units = c("days"))) %>%
   select(source:author_corresponding_institution,
          institution_match_score:institution_match_country_code,
          is_published, published_doi, published_date, delay_in_days, 
@@ -383,7 +477,7 @@ getWordCounts <- function(doi) {
     str_c(., collapse = " ")
   
   n_words <- word_count(p_text) - 
-              word_count(abstract_text)
+              word_count(abstract_text) -
               word_count(fig_text) - 
               word_count(table_text) -
               word_count(ack_text)
@@ -427,7 +521,7 @@ word_counts_df <- map_dfr(word_counts, ~ tibble(doi = .$result$doi,
          n_refs != 0)
 
 # Merge with other preprint data
-preprints_full <- preprints_full %>%
+preprints <- preprints %>%
   left_join(word_counts_df, by = "doi") %>%
   select(source:n_versions, n_words, n_refs, license:published_best_oa_license)
   
@@ -437,6 +531,6 @@ preprints_full <- preprints_full %>%
 
 ```{r}
 
-write_csv(preprints_full, "data/preprints_full_20190901_20200430.csv")
+write_csv(preprints, "data/preprints_full_20190901_20200430.csv")
 
 ```
