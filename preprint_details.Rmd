@@ -11,6 +11,8 @@ library(rcrossref)
 library(roadoi)
 library(rvest)
 library(fuzzyjoin)
+library(rentrez)
+library(XML)
 
 ```
 
@@ -251,8 +253,7 @@ preprints <- preprints %>%
 
 ```{r}
 
-published_dois <- published_articles %>%
-  pull(published_doi)
+published_dois <- preprints %>% filter(is_published) %>% pull(published_doi)
 
 published_articles_oa <- roadoi::oadoi_fetch(dois = published_dois,
                                              email = "n.fraser@zbw.eu") %>%
@@ -276,6 +277,66 @@ published_articles_oa <- roadoi::oadoi_fetch(dois = published_dois,
 preprints <- preprints %>% 
   left_join(published_articles_oa, by = "published_doi") %>%
   distinct()
+
+```
+
+# PubMed abstracts for published articles
+
+```{r}
+
+published_dois <- preprints %>% filter(is_published) %>% pull(published_doi)
+
+doi_chunks <- split(published_dois, ceiling(seq_along(published_dois)/200))
+
+# id_converter from rcrossref returns a PMID associated with a DOI. It can only take 200 records at a time
+published_pmids <- map_dfr(doi_chunks, function(x) id_converter(x)$records) %>%
+  filter(!is.na(pmid)) %>%
+  select(doi, pmid)
+
+parseAbstract <- function(item) {
+  paste0(xpathSApply(item, "//PubmedArticleSet/PubmedArticle/MedlineCitation/Article/Abstract/AbstractText", xmlValue), collapse = ". ")
+}
+
+getPubMedData <- function(item) {
+  
+  # see https://github.com/ropensci/rentrez/issues/100 for getting abstracts from PMIDs
+  d <- entrez_fetch("pubmed", id = item$pmid, 
+                  rettype= "xml", parsed = T)
+  
+  return(list(published_doi = item$doi,
+              published_abstract_pubmed = parseAbstract(d)))
+  
+}
+
+getPubMedDataSafely <- safely(getPubMedData)
+
+pubmed_data <- map(published_pmids, getPubMedDataSafely)
+
+parsePubMedData <- function(item) {
+  
+  if(length(item$result$published_doi)) {
+    tibble(
+      published_doi = item$result$published_doi,
+      published_pubmed_abstract = if(length(item$result$published_abstract_pubmed)) item$result$published_abstract_pubmed else NA_character_)
+  } else {
+    tibble(
+      published_doi = NA_character_,
+      published_pubmed_abstract = NA_character_
+    )
+  }
+}
+
+pubmed_abstracts <- map_dfr(pubmed_data, parsePubMedData) %>%
+  filter(!is.na(published_pubmed_abstract))
+
+```
+
+# Merge PubMed data with existing data
+
+```{r}
+
+preprints <- preprints %>%
+  left_join(pubmed_abstracts, by = "published_doi")
 
 ```
 
