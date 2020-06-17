@@ -294,7 +294,6 @@ published_pmids <- map_dfr(doi_chunks, function(x) id_converter(x)$records) %>%
   mutate(doi = str_trim(str_to_lower(doi))) %>%
   select(doi, pmid)
   
-
 parseAbstract <- function(item) {
   
   labels <- xpathSApply(item, "//PubmedArticleSet/PubmedArticle/MedlineCitation/Article/Abstract/AbstractText", xmlAttrs)
@@ -343,6 +342,13 @@ parsePubMedData <- function(item) {
 
 pubmed_abstracts <- map_dfr(pubmed_data, parsePubMedData) %>%
   filter(!is.na(published_pubmed_abstract))
+
+# Check number
+
+a <- preprints %>% 
+   select(-published_pubmed_abstract) %>%
+   inner_join(pubmed_abstracts, by = "published_doi") %>% 
+   select(doi, published_doi, abstract, published_pubmed_abstract)
 
 ```
 
