@@ -68,6 +68,7 @@ preprint_citations <- read_csv("data/preprint_citations_20190901_20200430.csv")
 preprint_altmetrics <- read_csv("data/preprint_altmetrics_20190901_20200430.csv")
 preprint_timing <- read_csv("data/preprint_earliest_per_country_20200101_20200430.csv")
 preprint_comments <- read_csv("data/preprint_comments_20190901_20200430.csv")
+preprint_policy <- read.csv("data\\preprint_policy_20190901_20200430.csv")
 
 # Reconstruct dataset of ALL preprints
 preprint_1 <- read.csv("data/preprints_basic_20131101_20181231.csv", stringsAsFactors = FALSE)   
@@ -1127,17 +1128,24 @@ top_cited <- preprints %>%
   top_n(10, citations) %>%
   pull(doi)
 
+top_policy <- preprints %>%
+  inner_join(preprint_policy, by = "doi") %>%
+  filter(covid_preprint == T) %>%
+  top_n(10, policy_mined) %>%
+  pull(doi)
+
 fit <- list(
-  Twitter = top_twitter,
-  News = top_news,
-  Blogs = top_blogs,
-  Citations = top_cited)
+    Twitter = top_twitter,
+    News = top_news,
+    Blogs = top_blogs,
+    Citations = top_cited,
+    Policy = top_policy)
 
 # Output the Venn diagram to a PNG
 png(filename = "outputs/figures/partials/Figure_S4B.png",
     width = 480, height = 360)
 plot(euler(fit), 
-     fills = qualitative_hcl(n = 4, palette = "Set2"),
+     fills = qualitative_hcl(n = 5, palette = "Set2"),
      alpha = 0.75,
      labels = list(cex = 1),
      quantities = list(cex = 1),
