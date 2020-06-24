@@ -87,7 +87,7 @@ dim_items <- dim_data %>%
              by = "doi") %>%
   # select relevant fields
   select(doi, created, title, journal, publisher, times_cited) %>%
-  filter(created <= "2020-04-30",
+  filter(created <= "2020-05-31",
          created >= "2020-01-01") %>%
   mutate(published_date = created) %>%
   distinct()
@@ -102,8 +102,8 @@ dim_items_oa <- oadoi_fetch(dois = dim_items$doi, email = "n.fraser@zbw.eu") %>%
   mutate(
     doi = str_trim(str_to_lower(doi)),
     article_is_oa = is_oa,
-    best_oa_license = map_chr(best_oa_location, ~ if(length(.$license)) .$license else NA),
-    best_oa_location = map_chr(best_oa_location, ~ if(length(.$host_type)) .$host_type else NA)
+    best_oa_license = map_chr(best_oa_location, function(x) if(length(x$license)) x$license else NA),
+    best_oa_location = map_chr(best_oa_location, function(x) if(length(x$host_type)) x$host_type else NA)
   ) %>%
   select(doi, article_is_oa, journal_is_oa, best_oa_location, best_oa_license)
 
@@ -116,8 +116,7 @@ dim_items_oa <- oadoi_fetch(dois = dim_items$doi, email = "n.fraser@zbw.eu") %>%
 dim_items %>%
   inner_join(dim_items_oa, by = "doi") %>%
   distinct() %>%
-  write_csv("data/journal_articles_20200101_20200430.csv")
-
+  write_csv("data/journal_articles_20200101_20200531.csv")
 
 ```
 
