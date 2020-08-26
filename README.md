@@ -147,3 +147,16 @@ All datasets are contained in the folder `data`. A description of the contents o
   * journal_is_oa: a boolean determining if the journal in which the published article is published in is an OA journal (according to data from Unpaywall, which is in turn based on data from [DOAJ](https://doaj.org/))
   * best_oa_location: determines whether the articles is OA in a journal or OA in a repository. If in both, then 'journal' is considered the 'best' location
   * best_oa_license: the license type, if published in a journal (where available)
+  
+* `policy_docs.csv` contains data for manually identified policy documents and their bibliographies/reference lists:
+  * type: topic of policy document, either COVID-19 or control (i.e. non-COVID-19)
+  * set: the source or series of the policy document
+  * doc: the filename of the policy document
+  * nrefs: the number of items the policy document cites in total
+  * nbiorxiv: the number of bioRxiv preprints cited
+  * nmedrxiv: the number of medRxiv preprints cited
+  * nssrn: the number of SSRN preprints cited
+  * nosf: the number of OSF preprints cited
+  * nressquare: the number of Research Square preprints cited
+  * narxiv: the number of arXiv preprints cited
+  * npreprints: the total number of preprints cited (sum of nbiorxiv:narxiv)
