@@ -793,20 +793,20 @@ pS2F <- preprints %>%
   ggsave("outputs/figures/partials/Figure_S2F.png", width = 5, height = 4) 
 
 
-# Panel F: Acceptance rates of COVID, non-COVID works
+# Panel G: Acceptance rates of COVID, non-COVID works
 # Reconstruct aggregated totals from confidential data supplied by publishers
 accept_rates <- structure(list(percentage = c(15.92079208, 26.51880844), 
                                is_covid = c("COVID-19 manuscripts", "non-COVID-19 manuscripts")), 
                           class = "data.frame", row.names = c(NA, -2L))
 
-pS2F <- accept_rates %>%
+pS2G <- accept_rates %>%
   ggplot(aes(x = is_covid, y = percentage, fill=is_covid)) +
   geom_col(color = "grey50", size = 0.25, position = "dodge") +
   labs(x = "", y = "% accepted", fill ="") +
   scale_fill_manual(values = qualitative_hcl(2, palette = "Set2")) +
   theme(axis.title.x = element_blank()) +
   guides(fill = FALSE) +
-  ggsave("outputs/figures/partials/Figure_S2F.png", width = 5, height = 4)
+  ggsave("outputs/figures/partials/Figure_S2G.png", width = 5, height = 4)
 
 # Patchwork
 
