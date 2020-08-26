@@ -12,9 +12,8 @@ Files referred to here are the main files used for retrieving metadata from vari
 * `preprint_altmetrics.Rmd` contains code used to retrieve altmetric counts (e.g. counts of tweets, mentions in news articles and blogs) from [Altmetric](https://altmetric.com).
 * `preprint_comments.Rmd` contains code used to retrieve comment counts for bioRxiv and medRxiv preprints via the [Disqus](https://disqus.com) API.
 * `preprint_usage.Rmd` contains code used to retrieve usage data (e.g. abstract views and PDF downloads) for bioRxiv and medRxiv preprints, which are scraped from the public preprint webpages.
-* `preprint_sentiment.Rmd` contains code for the sentiment anaylsis of tweets and comments on biORxiv and medRxiv preprints.
+* `preprint_firstcase.Rmd` contains code to calculate the date of chronologically first bioRxiv or medRxiv preprint and first COVID-19 case per country.
 * `figures.Rmd` contains code for reproducing all the figures and supplementary figures displayed in the study manuscript. Figures are stored in the `outputs/figures` folder.
-* `preprint_paper_evaluation_form.pdf` is an exported copy of the questionnaire (built with Google Forms) used by referees in this study to score differences between preprints and their final published papers.
 
 # Datasets
 
@@ -148,3 +147,16 @@ All datasets are contained in the folder `data`. A description of the contents o
   * journal_is_oa: a boolean determining if the journal in which the published article is published in is an OA journal (according to data from Unpaywall, which is in turn based on data from [DOAJ](https://doaj.org/))
   * best_oa_location: determines whether the articles is OA in a journal or OA in a repository. If in both, then 'journal' is considered the 'best' location
   * best_oa_license: the license type, if published in a journal (where available)
+  
+* `policy_docs.csv` contains data for manually identified policy documents and their bibliographies/reference lists:
+  * type: topic of policy document, either COVID-19 or control (i.e. non-COVID-19)
+  * set: the source or series of the policy document
+  * doc: the filename of the policy document
+  * nrefs: the number of items the policy document cites in total
+  * nbiorxiv: the number of bioRxiv preprints cited
+  * nmedrxiv: the number of medRxiv preprints cited
+  * nssrn: the number of SSRN preprints cited
+  * nosf: the number of OSF preprints cited
+  * nressquare: the number of Research Square preprints cited
+  * narxiv: the number of arXiv preprints cited
+  * npreprints: the total number of preprints cited (sum of nbiorxiv:narxiv)
