@@ -39,7 +39,7 @@ theme_set(theme_minimal() +
 # Make sure axis labels (e.g. month names) are in English
 Sys.setlocale("LC_ALL", "English")
 
-# Create custom date scale
+# Create custom date scale for time-series plots
 custom_date_scale <- function(start_date, end_date) {
   scale_x_date(date_breaks = "1 week",
                date_minor_breaks = "1 day",
@@ -58,38 +58,58 @@ custom_date_scale <- function(start_date, end_date) {
 # maintained by Johns Hopkins (https://github.com/CSSEGISandData/COVID-19)
 covid <- read_csv("https://raw.githubusercontent.com/datasets/covid-19/master/data/worldwide-aggregated.csv")
 
-# Main preprint datasets generated here
-preprints <- read_csv("data/preprints_full_20190901_20200430.csv",
-                      col_types = cols(n_refs = "n", n_words = "n")) # fix reading issue with word + ref counts
-preprints_epi_period <- preprints %>% filter(posted_date >= "2020-01-01") # Subset preprints by period for ease
-preprints_control_period <- preprints %>% filter(posted_date < "2020-01-01")
-preprint_usage <- read_csv("data/preprint_usage_20190901_20200430.csv")
-preprint_citations <- read_csv("data/preprint_citations_20190901_20200430.csv")
-preprint_altmetrics <- read_csv("data/preprint_altmetrics_20190901_20200430.csv")
-preprint_timing <- read_csv("data/preprint_earliest_per_country_20200101_20200430.csv")
-preprint_comments <- read_csv("data/preprint_comments_20190901_20200430.csv")
-preprint_policy <- read.csv("data\\preprint_policy_20190901_20200430.csv")
-
-# Reconstruct dataset of ALL preprints
+# Full dataset of preprints from the launch of bioRxiv (Nov 2013) to the end of
+# our study period (April 2020). Due to GitHub size limitations, data is split
+# between two files which must be subsequently bound together
 preprint_1 <- read.csv("data/preprints_basic_20131101_20181231.csv", stringsAsFactors = FALSE)   
 preprint_2 <- read.csv("data/preprints_basic_20190101_20200430.csv", stringsAsFactors = FALSE)
 preprints_all <- bind_rows(preprint_1, preprint_2)
 rm(preprint_1, preprint_2)
 
+# More detailed preprint metadata covering period Sept 2019 - April 2020
+preprints <- read_csv("data/preprints_full_20190901_20200430.csv",
+                      col_types = cols(n_refs = "n", n_words = "n"))
+
+# Subset preprint dataset above by period for ease
+preprints_epi_period <- preprints %>% filter(posted_date >= "2020-01-01") 
+preprints_control_period <- preprints %>% filter(posted_date < "2020-01-01")
+
+# Preprint usage data (PDF downloads, abstract views)
+preprint_usage <- read_csv("data/preprint_usage_20190901_20200430.csv")
+
+# Preprint citation data
+preprint_citations <- read_csv("data/preprint_citations_20190901_20200430.csv")
+
+# Preprint altmetrics data
+preprint_altmetrics <- read_csv("data/preprint_altmetrics_20190901_20200430.csv")
+
+# Data of preprint timing (i.e. timing of first preprint per country - see Figure 2)
+preprint_timing <- read_csv("data/preprint_earliest_per_country_20200101_20200430.csv")
+
+# Preprint comments (counts) data
+preprint_comments <- read_csv("data/preprint_comments_20190901_20200430.csv")
+
+# Preprint policies
+preprint_policy <- read.csv("data\\preprint_policy_20190901_20200430.csv")
+
 # Changes between preprints and their published papers
 preprint_changes <- read_csv("data/preprint_article_changes.csv")
 
-# Full dataset of preprints from other servers
+# Full dataset of preprints from other servers (note: dataset is generated
+# externally and updated weekly)
 preprints_other <- read_csv("https://raw.githubusercontent.com/nicholasmfraser/covid19_preprints/master/data/covid19_preprints.csv", col_types = "cccccc")
 
-# Journal articles
-journal_articles <- read_csv("data/journal_articles_20200101_20200430.csv")
+# Dataset of journal articles on COVID-19 from Dimensions. Dataset covers the 
+# period Jan - May 2020, but for figures we only include data until April 2020
+journal_articles <- read_csv("data/journal_articles_20200101_20200531.csv") %>%
+  filter(published_date <= as.Date("2020-04-30"))
 
 ```
 
 # Figure 1: Development of COVID-19, journal articles and preprints over time
 
 ```{r}
+
 # Panel A: Development of COVID-19 cases and deaths
 
 # Define text and coordinates for annotations
@@ -132,11 +152,9 @@ p1A <- covid %>%
 # Panel B: Number of journal articles and preprints on COVID-19
 
 p1B <- preprints_other %>%
-  mutate(posted_date = as.Date(posted_date),
-         type = "Preprints") %>%
-  bind_rows(journal_articles %>% 
-            mutate(posted_date = created,
-                   type = "Journal Articles")) %>%
+  mutate(posted_date = as.Date(posted_date), type = "Preprints") %>%
+  bind_rows(journal_articles %>% mutate(posted_date = created,
+                                        type = "Journal Articles")) %>%
   count(type, posted_date) %>%
   complete(posted_date, nesting(type), fill = list(n = 0)) %>%
   group_by(type) %>%
@@ -193,42 +211,6 @@ p1C <- preprints_other %>%
   scale_fill_manual(values = qualitative_hcl(12, palette = "Set2")) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   ggsave("outputs/figures/partials/Figure_1C.png", width = 10, height = 4)
-
-# Panel D: Publishing developments
-
-# Next time just make an image somewhere else and insert to the figure with ggdraw...this was too much
-
-d <- tibble(
-  event_date = c("2020-01-31",
-                 "2020-03-13",
-                 "2020-03-16",
-                 "2020-03-25",
-                 "2020-04-27"),
-  event_name = c("Call for researchers, journals and publishers to rapidly and openly share COVID-19 findings[23]",
-                 "Science leaders ask publishers to make COVID content open and re-usable[24]", "Over 30 publishers agree to make COVID-19 content freely accessible via PubMed[25]", 
-                 "eLife alters peer review policies in light of COVID-19[26]", 
-                 "OASPA issue open letter of intent to maximise efficiency of peer-review for COVID-19 work[27]"),
-  x_position = c(0,-6,0,6,0),
-  y_position = c(-1,0.8,-0.8,0.6,1),
-  direction = c(-1, 1, -1, 1, 1),
-  label_x_position = c(-4,4,-4,4,4)) %>%
-  mutate(event_date = ymd(event_date),
-         event_name = factor(event_name))
-
-p1D <- ggplot(d) +
-geom_text( aes(x = (event_date + x_position), y = (direction + y_position), label = str_wrap(event_name, 22)), size = 3) +
-  geom_hline(yintercept = 0, size = 1) +
-  geom_segment(aes(x = event_date, y = direction, xend = event_date, yend = 0)) +
-  geom_point(aes(x = event_date, y = 0), shape = 21, fill = "grey90", color = "grey50", size = 3)  +
-  geom_text(data = d, aes(x = (event_date + label_x_position), y = (direction*0.5), label = event_date), size = 2, angle = 45, color = "grey25") +
-  scale_y_continuous(limits = c(-2.75, 2.75)) +
-  scale_x_date(limits = c(ymd("2020-01-01"), ymd("2020-05-15"))) +
-  labs(y = "", x = "") +
-  theme(axis.text = element_blank(),
-        plot.background = element_blank(),
-        panel.grid.major = element_blank(), 
-        panel.grid.minor = element_blank()) +
-  ggsave("outputs/figures/partials/Figure_1D.png", width = 10, height = 5)
 
 # Patchwork
 p1A + p1B + p1C + p1D + plot_layout(ncol = 1, heights = c(1,1,1,1.5)) +
