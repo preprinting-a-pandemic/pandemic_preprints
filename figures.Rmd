@@ -371,21 +371,23 @@ p2C <- preprints %>%
 
 # Panel D: Author attributes: country, nationality (top 10 countries)
 # Extract and classify all senior authors
-covid_authors <- preprints %>% filter(covid_preprint == T) %>% pull(author_corresponding)
-control_authors <- preprints %>% filter(covid_preprint == F & !(author_corresponding %in% covid_authors)) %>% pull(author_corresponding)
+covid_authors <- preprints_epi_period %>% filter(covid_preprint == T) %>% pull(author_corresponding)
+control_authors <- preprints_epi_period %>% filter(covid_preprint == F & !(author_corresponding %in% covid_authors)) %>% pull(author_corresponding)
+
 preprinter_history <- preprints_all %>% 
+  filter(posted_date < "2020-01-01") %>% 
+  mutate(author_corresponding = factor(author_corresponding, levels = unique(c(covid_authors, control_authors)))) %>%
+  filter(!is.na(author_corresponding)) %>%
+  group_by(author_corresponding, .drop = FALSE) %>%
+  summarise(n = n()) %>%
   mutate(author_group = case_when(
     author_corresponding %in% covid_authors ~ "COVID-19",
-    author_corresponding %in% control_authors ~ "non-COVID",
-    TRUE ~ "nonstudy",
-  )) %>%
-  group_by(author_corresponding, author_group) %>%
-  summarise(n = n()) %>%
-  mutate(preprinter_status = ifelse(n == 1, "first-timer", "previous"))
+    author_corresponding %in% control_authors ~ "non-COVID"),
+  preprinter_status = ifelse(n == 0, "first-timer", "previous")) %>%
+  select(-n)
 
 # Append author locations, with manual corrections and calculate proportions for plot
 preprinter_history_plot <- preprinter_history %>%
-  filter(author_group != "nonstudy") %>%
   left_join(preprints %>% 
               mutate(institution_match_country_name = case_when(
                 author_corresponding_institution == "Universidad de los Andes" ~ "Colombia",
