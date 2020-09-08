@@ -6,7 +6,11 @@ temp
 archived
 journal_article_altmetrics.Rmd
 data/otherservers
+<<<<<<< HEAD
 data/journal_article_altmetrics_20200101_20200430.csv
 data/preprint_tweets_20190901_20200430.csv
 tweet_wordcloud.html
 tweet_wordcloud_files
+=======
+.ipynb_checkpoints
+>>>>>>> d4194de411ba6e530a22818491656fe385cb31fa

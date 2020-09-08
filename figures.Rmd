@@ -73,7 +73,7 @@ assign_covid_preprint <- function(d) {
 
 # Dataset of COVID-19 cases and deaths. Data is aggregated from the repository
 # maintained by Johns Hopkins (https://github.com/CSSEGISandData/COVID-19)
-covid <- read_csv("https://raw.githubusercontent.com/datasets/covid-19/master/data/worldwide-aggregated.csv")
+covid <- read_csv("https://raw.githubusercontent.com/datasets/covid-19/master/data/worldwide-aggregate.csv")
 
 # Full dataset of preprints from the launch of bioRxiv (Nov 2013) to the end of
 # our study period (April 2020). Due to GitHub size limitations, data is split
@@ -403,16 +403,22 @@ control_authors <- preprints %>%
   pull(author_corresponding)
 
 preprinter_history <- preprints_all %>%
+  filter(posted_date < "2020-01-01") %>%
   clean_names() %>%
-  mutate(author_group = case_when(
-    author_corresponding %in% covid_authors ~ "COVID-19 preprints",
-    author_corresponding %in% control_authors ~ "non-COVID-19 preprints",
-    TRUE ~ "nonstudy",
-  )) %>%
-  count(author_corresponding, author_group) %>%
-  mutate(preprinter_status = case_when(
-    n == 1 ~ "First-time", 
-    T ~ "Previous"))
+  mutate(author_corresponding = factor(author_corresponding, 
+                                       levels = unique(c(covid_authors, control_authors)))) %>%
+  filter(!is.na(author_corresponding)) %>%
+  group_by(author_corresponding, .drop = FALSE) %>%
+  summarise(n = n()) %>%
+  mutate(
+    author_group = case_when(
+      author_corresponding %in% covid_authors ~ "COVID-19 preprints",
+      author_corresponding %in% control_authors ~ "non-COVID-19 preprints"
+    ),
+    preprinter_status = case_when(
+      n == 0 ~ "First-time", 
+      T ~ "Previous")
+    )
 
 # Append author locations and calculate proportions for plot
 preprinter_history_plot <- preprinter_history %>%
@@ -421,8 +427,7 @@ preprinter_history_plot <- preprinter_history %>%
               distinct() %>% 
               clean_names(), 
             by = "author_corresponding") %>%
-  filter(author_group != "nonstudy",
-         !is.na(institution_match_country_name),
+  filter(!is.na(institution_match_country_name),
          author_corresponding != "? ?") %>%
   count(author_group, preprinter_status, institution_match_country_name) %>% 
   complete(author_group, preprinter_status, institution_match_country_name, 
@@ -432,7 +437,7 @@ preprinter_history_plot <- preprinter_history %>%
 
 countries_to_plot <- preprinter_history_plot %>% 
   filter(author_group == "non-COVID-19 preprints" & preprinter_status == "Previous") %>% 
-  arrange(-prop) %>% slice(1:10) %>% 
+  arrange(-prop) %>% slice(1:15) %>% 
   pull(institution_match_country_name)
 
 p2D <- preprinter_history_plot %>%
@@ -817,9 +822,9 @@ pS2G <- accept_rates %>%
 # define layout 
 layout <- "
 AB
-DC
-DC
-DE
+CD
+CD
+CE
 FG
 "
 
