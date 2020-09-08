@@ -87,7 +87,7 @@ dim_items <- dim_data %>%
              by = "doi") %>%
   # select relevant fields
   select(doi, created, title, journal, publisher, times_cited) %>%
-  filter(created <= "2020-05-31",
+  filter(created <= "2020-04-30", # limit to our analysis period
          created >= "2020-01-01") %>%
   mutate(published_date = created) %>%
   distinct()
@@ -116,7 +116,7 @@ dim_items_oa <- oadoi_fetch(dois = dim_items$doi, email = "n.fraser@zbw.eu") %>%
 dim_items %>%
   inner_join(dim_items_oa, by = "doi") %>%
   distinct() %>%
-  write_csv("data/journal_articles_20200101_20200531.csv")
+  write_csv("data/journal_articles_20200101_20200430.csv")
 
 ```
 
