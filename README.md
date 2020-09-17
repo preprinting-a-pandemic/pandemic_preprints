@@ -1,6 +1,8 @@
-This repository contains code and datasets for the study "Preprinting a pandemic: the role of preprints in the COVID-19 pandemic" [currently available from bioRxiv: [https://www.biorxiv.org/content/10.1101/2020.05.22.111294v1](https://www.biorxiv.org/content/10.1101/2020.05.22.111294v1)].
+This repository contains code and datasets for the study "Preprinting the COVID-19 pandemic" (Latest version on bioRxiv: [https://doi.org/10.1101/2020.05.22.111294](https://doi.org/10.1101/2020.05.22.111294)).
 
-This README contains an overview of the different files and datasets contained in this repository. The full methodology is documented in the above linked preprint.
+[Previous releases](https://github.com/preprinting-a-pandemic/pandemic_preprints/releases) of this repository contain code and datasets related to earlier versions of the study (i.e. release V1.0 corresponds to the [first version of the preprint](https://www.biorxiv.org/content/10.1101/2020.05.22.111294v1)).
+
+This README contains an overview of the different files and datasets contained in this repository. The full methodology is documented in the above linked study.
 
 # Files
 
@@ -123,18 +125,6 @@ All datasets are contained in the folder `data`. A description of the contents o
   * Country.Region: the name of the relevant country
   * first_case: the date of the first case of COVID-19 in the relevant country
   * lag: the number of days between the first reported case in a country, and the first relevant COVID-19 preprint
-
-* `cv_mx_disqus_comments.csv` and `cv_bx_disqus_comments.csv`: comment data for COVID-19 preprints deposited to medRxiv and bioRxiv, respectively:
-  * id: the preprint ID
-  * dsqus_id: the Disqus ID of the comment
-  * dsqus_user: the Disqus user ID of the commenter
-  * dsqus_name: the Disqus user name of the commenter
-  * dsqus_comment: the Disqus comment text
-  * preprint_doi: doi of the preprint being commented on
-  * dsqus_date: the date on which the comment was made
-  * dsqus_time: the time at which the comment was made
-  * dsqus_timestamp: timestamp of comment
-  * dsqus_url: url to the preprint being commented on
 
 * `journal_articles_20200101_20200430.csv` contains metadata for all journal articles (i.e. not only those linked to our dataset of preprints) relating to COVID-19, extracted from Dimensions, Crossref and Unpaywall:
   * doi: the journal article DOI

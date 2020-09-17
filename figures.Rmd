@@ -660,32 +660,7 @@ pS2B <- preprints %>%
   theme(strip.background = element_rect(color = "grey90", fill = "grey95")) +
   ggsave("outputs/figures/partials/Figure_S2B.png", width = 10, height = 4)
 
-# Panel C: First case -> first preprint by location
-
-pS2C <- preprint_timing %>%
-  mutate(continent = countrycode::countrycode(institution_match_country_code, 
-                                              origin = 'iso2c', destination = 'continent')) %>% 
-  filter(!is.na(first_preprint) & !is.na(first_case) & !is.na(continent)) %>%
-  ggplot(aes(x = first_case, y = first_preprint, label = institution_match_country_code)) +
-  geom_point(aes(color = continent), size=2) +
-  geom_text_repel(force = 5,
-                  segment.color = "grey50",
-                  segment.size = 0.2,
-                  segment.alpha = 0.8,
-                  color = "grey25", 
-                  size = 2.5) +
-  geom_abline(intercept = 0, slope = 1, color = "grey50", lty = "dashed", alpha = 0.5) +
-  labs(x = "Date of first case",
-       y = "Date of first preprint",
-       color = "") +
-  scale_color_manual(values = qualitative_hcl(5, palette = "Set2")) +
-  coord_cartesian(ylim = c(ymd("2020-01-01", "2020-04-30")),
-                  xlim = c(ymd("2020-01-01", "2020-04-30"))) +
-  theme(legend.margin = margin(0, 0, 0, 0),
-        legend.position = "top") +
-  ggsave("outputs/figures/partials/Figure_S2C.png", width = 5, height = 4)
-
-# Panel D: Science focus of senior author
+# Panel C: Science focus of senior author
 # For each author, select their chronologically latest COVID-19 preprint
 preprint_author_last_covid <- preprints %>%
   clean_names() %>%
@@ -718,7 +693,7 @@ preprint_author_last <- preprint_author_last_covid %>%
 total_cats <- c(preprint_author_last$category_covid, preprint_author_last$category_previous) %>% unique %>% sort
 
 # Plot alluvial diagram
-pS2D <- preprint_author_last %>%
+pS2C <- preprint_author_last %>%
   mutate(category_covid = factor(category_covid, levels = total_cats),
          category_previous = factor(category_previous, levels = total_cats)) %>%
   group_by(category_covid, category_previous) %>%
@@ -742,6 +717,33 @@ pS2D <- preprint_author_last %>%
         panel.grid.minor = element_blank()) +
   ggsave("outputs/figures/partials/Figure_S2D.png", width = 5, height = 8)
 
+# Panel D: First case -> first preprint by location
+
+pS2D <- preprint_timing %>%
+  mutate(continent = countrycode::countrycode(institution_match_country_code, 
+                                              origin = 'iso2c', destination = 'continent')) %>% 
+  filter(!is.na(first_preprint) & !is.na(first_case) & !is.na(continent)) %>%
+  ggplot(aes(x = first_case, y = first_preprint, label = institution_match_country_code)) +
+  geom_point(aes(color = continent), size=2) +
+  geom_text_repel(force = 5,
+                  segment.color = "grey50",
+                  segment.size = 0.2,
+                  segment.alpha = 0.8,
+                  color = "grey25", 
+                  size = 2.5) +
+  geom_abline(intercept = 0, slope = 1, color = "grey50", lty = "dashed", alpha = 0.5) +
+  labs(x = "Date of first case",
+       y = "Date of first preprint",
+       color = "") +
+  scale_color_manual(values = qualitative_hcl(5, palette = "Set2")) +
+  coord_cartesian(ylim = c(ymd("2020-01-01", "2020-04-30")),
+                  xlim = c(ymd("2020-01-01", "2020-04-30"))) +
+  theme(legend.margin = margin(0, 0, 0, 0),
+        legend.position = "top") +
+  ggsave("outputs/figures/partials/Figure_S2C.png", width = 5, height = 4)
+
+
+
 # Panel E: Journal locations of published papers (top 10)
 
 pS2E <- preprints %>%
@@ -758,7 +760,7 @@ pS2E <- preprints %>%
   theme(axis.text.x = element_text(size = 8, angle = 45, hjust = 1)) +
   ggsave("outputs/figures/partials/Figure_S2E.png", width = 5, height = 4) 
 
-# Panel F: Time to publication for different publishers (top 10)
+# Panel F: Time to publication for different publishers (top 8)
 
 top_publishers <- preprints %>%
   filter(covid_preprint == T,
@@ -766,7 +768,7 @@ top_publishers <- preprints %>%
   count(published_publisher) %>%
   na.omit() %>%
   arrange(-n) %>%
-  slice(1:10) %>%
+  slice(1:8) %>%
   pull(published_publisher)
 
 pS2F <- preprints %>%
