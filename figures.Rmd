@@ -64,6 +64,12 @@ assign_covid_preprint <- function(d) {
          ))
 }
 
+# Function for basic cleaning of author names - convert to lowercase, remove whitespace, remove periods after initials
+clean_names <- function(d) {
+  d %>% 
+    mutate(author_corresponding = str_to_lower(str_trim(str_remove(author_corresponding, "\\."))))
+}
+
 ```
 
 
@@ -383,14 +389,6 @@ p2C <- preprints %>%
   ggsave("outputs/figures/partials/Figure_2C.png", width = 5, height = 4)
 
 # Panel D: Author attributes: country, nationality (top 10 countries)
-
-# Function for basic cleaning of author names - convert to lowercase, remove
-# whitespace, remove periods after initials
-clean_names <- function(d) {
-  d %>% 
-    mutate(author_corresponding = str_to_lower(str_trim(str_remove(author_corresponding, "\\."))))
-}
-
 # Extract and classify all senior authors
 covid_authors <- preprints %>% 
   filter(covid_preprint == T) %>%
