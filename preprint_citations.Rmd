@@ -16,7 +16,7 @@ dimensions_login()
 
 ```{r}
 
-preprints <- read_csv("data/preprints_full_20190901_20200430.csv")
+preprints <- read_csv("data/preprints_full_20190101_20201031.csv")
 
 ```
 
@@ -75,7 +75,7 @@ preprints %>%
   replace_na(list(citations = 0)) %>%
   left_join(published_citations, by = "published_doi") %>%
   select(doi, citations, published_doi, published_citations) %>%
-  write_csv("data/preprint_citations_20190901_20200430.csv")
+  write_csv("data/preprint_citations_20190101_20201031.csv")
 
 ```
 

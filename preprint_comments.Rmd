@@ -69,7 +69,7 @@ medrxiv_comment_counts <- map_dfr(medrxiv_data, extractCommentCounts) %>%
 
 ```{r}
 
-Sys.sleep(2000)
+#Sys.sleep(2000)
 
 has_next <- T
 biorxiv_data <- list()
@@ -108,9 +108,12 @@ biorxiv_comment_counts <- map_dfr(biorxiv_data, extractCommentCounts) %>%
 ```{r}
 
 preprint_comment_counts <- bind_rows(medrxiv_comment_counts, biorxiv_comment_counts) %>%
-  inner_join(read_csv("data/preprints_full_20190901_20200430.csv"), by = "doi") %>%
-  select(doi, comments_count) %>%
-  write_csv("data/preprint_comments_20190901_20200430.csv")
+  group_by(doi) %>%
+  summarize(comments_count = sum(comments_count)) %>% 
+  ungroup() %>%
+  right_join(preprints %>% select(doi), by = "doi") %>%
+  distinct() %>%
+  write_csv("data/preprint_comments_20190101_20201031.csv")
 
 ```
 

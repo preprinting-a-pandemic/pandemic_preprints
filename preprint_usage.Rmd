@@ -17,7 +17,9 @@ library(janitor)
 
 ```{r}
 
-preprints <- read_csv("data/preprint_details.csv")
+preprints <- bind_rows(
+  read_csv("data/preprints_basic_20190101_20191231.csv"),
+  read_csv("data/preprints_basic_20200101_20201031.csv"))
 
 ```
 
@@ -74,20 +76,24 @@ usage_data <- map2(preprints$source, preprints$doi,
 parseUsageData <- function(item) {
   if(item["error"] == "") {
     return()
+  } else if(!length(item$result)) {
+    return()
   } else {
-    return(item$result)
+    return(
+      tibble(
+        source = item$result$source,
+        doi = as.character(item$result$doi),
+        collection_date = as.character(item$result$date),
+        abstract_views = as.numeric(item$result$abstract),
+        full_text_views = if(length(item$result$full)) as.numeric(item$result$full) else rep(NA_integer_, length(item$result$doi)),
+        pdf_downloads = as.numeric(item$result$pdf)
+      )
+    )
   }
 }
 
 map_dfr(usage_data, parseUsageData) %>%
-  rename(full_text_views = full,
-         abstract_views = abstract,
-         pdf_downloads = pdf,
-         collection_date = date) %>%
-  inner_join(preprints, by = c("doi", "source")) %>%
-  select(doi, collection_date, abstract_views, full_text_views, pdf_downloads) %>%
-  distinct() %>%
-  write_csv("data/preprint_usage_20190901_20200430.csv")
+  write_csv("data/preprint_usage_20190101_20201031.csv")
 
 ```
 

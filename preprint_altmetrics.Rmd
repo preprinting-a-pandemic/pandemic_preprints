@@ -14,14 +14,13 @@ library(tidyverse)
 
 ```{r}
 
-preprints <- read_csv("data/preprints_full_20190901_20200430.csv")
+preprints <- read_csv("data/preprints_full_20190101_20201031.csv")
 
 ```
 
 # Counts data
 
 ```{r}
-
 # Altmetric API key - set in .Renviron file
 # API key is not strictly necessary but removes rate limits
 api_key <- Sys.getenv("ALTMETRIC_API_KEY")
@@ -94,6 +93,11 @@ pb <- progress_estimated(length(preprints$doi))
 preprint_altmetric_counts <- map_dfr(preprints$doi, getAltmetrics) %>%
   mutate(doi = str_trim(str_to_lower(doi)))
 
+```
+
+
+```{r}
+
 # Retrieve altmetric data for all published articles
 published_dois <- preprints %>% 
   filter(!is.na(published_doi)) %>% 
@@ -108,7 +112,7 @@ published_altmetric_counts <- map_dfr(published_dois, getAltmetrics) %>%
     published_blogs = blogs,
     published_news = news,
     published_wikipedia = wikipedia,
-    published_policies = polices
+    published_policies = policies
   ) %>%
   mutate(published_doi = str_trim(str_to_lower(published_doi)))
 
@@ -122,7 +126,8 @@ preprints %>%
   inner_join(preprint_altmetric_counts, by = "doi") %>%
   left_join(published_altmetric_counts, by = "published_doi") %>%
   select(doi, score:policies, published_doi, published_score:published_policies) %>%
-  write_csv("data/preprint_altmetrics_20190901_20200430.csv")
+  distinct() %>%
+  write_csv("data/preprint_altmetrics_20190101_20201031.csv")
 
 ```
 

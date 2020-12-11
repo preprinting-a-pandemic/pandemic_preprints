@@ -4,6 +4,8 @@ title: "R Notebook"
 
 ```{r}
 
+library(furrr) # for parallel processing
+library(lubridate)
 library(tidyverse)
 library(rdimensions) # in development: https://github.com/nicholasmfraser/rdimensions
 library(rcrossref)
@@ -21,75 +23,140 @@ dimensions_login()
 # Generate the dimensions query string
 dim_q <- '"(\\"coronavirus\\" OR \\"covid-19\\" OR \\"sars-cov\\" OR \\"ncov-2019\\" OR \\"2019-ncov\\" OR \\"hcov-19\\" OR \\"sars-2\\")"'
 
-# Determine how many total results we can expect
-search_string <- paste0('search publications in title_abstract_only for ', dim_q, ' where year=2020 return publications')
-results <- dimensions_query(search_string)$`_stats`$total_count
-
-# Function for querying dimensions API and returning publication data
-getDimensionsData <- function(i) {
-  search_string <- paste0('search publications in title_abstract_only for ', dim_q, 
-    ' where year=2020 return publications[doi+type+year+title+times_cited+journal+date+publisher] limit 1000 skip ', (i-1)*1000)
-  data <- dimensions_query(search_string)$publications
-  return(data)
+parse_character <- function(element) {
+  if(length(element)) {
+    return(as.character(element))
+  } else {
+    return(NA_character_)
+  }
+}
+ 
+parse_numeric <- function(element) {
+  if(length(element)) {
+    return(as.numeric(element))
+  } else {
+    return(NA)
+  }
 }
 
-# Calculate number of query iterations required (results per page = 1000)
-iterations <- ceiling(results/1000)
-
-# Parse Dimensions data to a data frame
-parseDimensionsData <- function(item) {
+# Function to parse Dimensions data to a data frame
+dim_parse <- function(item) {
   tibble(
-    doi = if(length(item$doi)) item$doi else NA,
-    type = item$type,
-    year = item$year,
-    title = item$title,
-    journal = if(length(item$journal$title)) item$journal$title[[1]] else NA,
-    times_cited = item$times_cited,
-    published_date = item$date,
-    publisher = if(length(item$publisher)) item$publisher else NA
+    doi = parse_character(item$doi),
+    type = parse_character(item$type),
+    year = parse_character(item$year),
+    published_date = parse_character(item$date),
+    title = parse_character(item$title),
+    abstact = parse_character(item$abstract),
+    journal = parse_character(item$journal$title),
+    publisher = parse_character(item$publisher),
+    times_cited = parse_numeric(item$times_cited)
   )
 }
 
-# Retrieve data
-dim_data <- map(1:iterations, getDimensionsData) %>%
-  map_dfr(., ~ map_dfr(., parseDimensionsData)) %>%
+# Function for querying dimensions API between two dates
+dim_data <- function(start_date, end_date) {
+  
+  # Determine how many total results we can expect
+  query <- paste0('search publications in title_abstract_only for ', 
+                  dim_q, 
+                  ' where (date>="',
+                  start_date,
+                  '" and date<="',
+                  end_date, 
+                  '" and type="article"',
+                  ') return publications')
+
+  results <- dimensions_query(query)$`_stats`$total_count
+  
+  # Calculate number of query iterations required (results per page = 1000)
+  iterations <- ceiling(results/1000)
+  
+  # Select fields we want to return
+  fields <- c("doi",
+              "type",
+              "year",
+              "title",
+              "times_cited",
+              "abstract",
+              "journal",
+              "date",
+              "publisher")
+  
+  get_data <- function(i) {
+    
+    d <- dimensions_query(str_c(query,
+                                '[', str_c(fields, collapse = "+"),
+                                '] limit 1000 skip ', 
+                                (i-1)*1000))$publications
+    
+    Sys.sleep(0.25)
+  
+    return(map_dfr(d, dim_parse))
+
+  }
+  
+  # Iterate over results set and convert to data frame
+  data <- map_dfr(1:iterations, get_data) 
+  
+  return(data)
+  
+}
+
+# Create two vectors of dates - the start and end day for each month for which 
+# data should be extract#ed
+start_dates <- seq(ymd('2020-01-01'), ymd("2020-10-01"), by = '1 month')
+end_dates <- seq(ymd('2020-02-01'), ymd("2020-11-01"), by = '1 month') - 1
+
+# Retrieve publication data
+dim_pubs <- map2_dfr(start_dates, end_dates, dim_data) %>%
   # clean doi for matching
   mutate(doi = str_trim(str_to_lower(doi))) %>%
-  # We keep only "article" types
-  # Note that Dimensions currently mislabels "medRxiv" as "article" types, so
-  # these should be removed
-  filter(type == "article",
-         journal != "medRxiv") %>%
   distinct()
 
 ```
 
-# Add publication dates from Crossref
+# Add additional information from Crossref
 
 ```{r}
-
 # Dimensions provides a field "date" which can be used for publication dates,
 # but there appear to be a number of inaccuracies, e.g. >1000 papers with publication
 # dates on 2020-01-01. Instead we can use Crossref to return more accurate dates
 # using the "created" parameter.
 
+# Some journal names are also missing in Dimensions, in particular for articles
+# published by Elsevier. Unclear why this occurs.
+
 # Caution: A single API call is made for every doi, so for large datasets this
-# may take several hours to run
+# may take several hours to run. We can speed this up with parallelisation using
+# the furrr package and future_map functions
+dois <- dim_pubs %>% pull(doi)
+# Set number of cores (use availableCores() to check max number)
+plan(multisession, workers = 3)
 
-cr_data <- cr_works(dois = dim_data %>% distinct(doi) %>% pull(doi))$data
+cr_data <- future_map_dfr(dois, ~ cr_works(.x)$data)
 
-# Create final dataset
-dim_items <- dim_data %>%
+```
+
+```{r}
+
+# Merge dimensions and crossref info
+dim_cr_pubs <- dim_pubs %>%
   inner_join(cr_data %>% 
-               select(doi, created) %>%
+               select(doi, created, issued, published.online, published.print) %>%
                # clean doi for matching
                mutate(doi = str_trim(str_to_lower(doi))),
              by = "doi") %>%
   # select relevant fields
-  select(doi, created, title, journal, publisher, times_cited) %>%
-  filter(created <= "2020-04-30", # limit to our analysis period
-         created >= "2020-01-01") %>%
-  mutate(published_date = created) %>%
+  select(doi, type, published_date, created, issued, published.online, published.print,
+         title, journal, publisher, times_cited) %>%
+  rename(
+    dim_published_date = published_date,
+    cr_created = created,
+    cr_issued = issued,
+    cr_published_online = published.online,
+    cr_published_print = published.print
+  ) %>%
   distinct()
 
 ```
@@ -98,7 +165,7 @@ dim_items <- dim_data %>%
 
 ```{r}
 
-dim_items_oa <- oadoi_fetch(dois = dim_items$doi, email = "n.fraser@zbw.eu") %>%
+dim_pubs_oa <- oadoi_fetch(dois = dim_cr_pubs$doi, email = "n.fraser@zbw.eu") %>%
   mutate(
     doi = str_trim(str_to_lower(doi)),
     article_is_oa = is_oa,
@@ -113,10 +180,12 @@ dim_items_oa <- oadoi_fetch(dois = dim_items$doi, email = "n.fraser@zbw.eu") %>%
 
 ```{r}
 
-dim_items %>%
-  inner_join(dim_items_oa, by = "doi") %>%
-  distinct() %>%
-  write_csv("data/journal_articles_20200101_20200430.csv")
+dim_cr_pubs %>%
+  filter(cr_created >= "2020-01-01",
+         cr_created <= "2020-10-31") %>%
+  #inner_join(dim_items_oa, by = "doi") %>%
+  #distinct() %>%
+  write_csv("data/journal_articles_20200101_20201031.csv")
 
 ```
 
