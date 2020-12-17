@@ -427,6 +427,7 @@ preprinter_history_plot <- preprinter_history %>%
             by = "author_corresponding") %>%
   filter(!is.na(institution_match_country_name),
          author_corresponding != "? ?") %>%
+  select(-n) %>%
   count(author_group, preprinter_status, institution_match_country_name) %>% 
   complete(author_group, preprinter_status, institution_match_country_name, 
            fill = list(n = 0)) %>%
