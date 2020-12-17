@@ -165,14 +165,17 @@ dim_cr_pubs <- dim_pubs %>%
 
 ```{r}
 
-dim_pubs_oa <- oadoi_fetch(dois = dim_cr_pubs$doi, email = "n.fraser@zbw.eu") %>%
-  mutate(
-    doi = str_trim(str_to_lower(doi)),
-    article_is_oa = is_oa,
-    best_oa_license = map_chr(best_oa_location, function(x) if(length(x$license)) x$license else NA),
-    best_oa_location = map_chr(best_oa_location, function(x) if(length(x$host_type)) x$host_type else NA)
-  ) %>%
-  select(doi, article_is_oa, journal_is_oa, best_oa_location, best_oa_license)
+oadoi_fetch_safely <- safely(oadoi_fetch)
+
+safe_dim_pubs_oa <- map(dim_cr_pubs$doi, ~ oadoi_fetch_safely(dois = .x, email = "n.fraser@zbw.eu"))
+
+dim_pubs_oa <- safe_dim_pubs_oa %>%
+  map_dfr(., function(x) tibble(
+    doi = str_trim(str_to_lower(x$result$doi)),
+    article_is_oa = x$result$is_oa,
+    journal_is_oa = x$result$journal_is_oa
+  )) %>%
+  select(doi, article_is_oa, journal_is_oa)
 
 ```
 
@@ -183,8 +186,8 @@ dim_pubs_oa <- oadoi_fetch(dois = dim_cr_pubs$doi, email = "n.fraser@zbw.eu") %>
 dim_cr_pubs %>%
   filter(cr_created >= "2020-01-01",
          cr_created <= "2020-10-31") %>%
-  #inner_join(dim_items_oa, by = "doi") %>%
-  #distinct() %>%
+  inner_join(dim_pubs_oa, by = "doi") %>%
+  distinct() %>%
   write_csv("data/journal_articles_20200101_20201031.csv")
 
 ```
