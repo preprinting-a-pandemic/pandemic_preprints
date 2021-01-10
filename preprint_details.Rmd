@@ -28,7 +28,7 @@ library(lubridate)
 max_results_per_page <- 100 # max allowable number of results per page
 base_url <- "https://api.biorxiv.org/details/"
 
-start <- "2020-10-30"
+start <- "2013-11-01" # Launch of bioRxiv
 end <- "2020-10-31"
 
 getPreprintData <- function(server) {
@@ -54,7 +54,7 @@ getPreprintData <- function(server) {
     } else {
       data <- c(data, list("error" = content$messages[[1]]$status))
     }
-    Sys.sleep(0.25) # don't hit the API too hard
+    Sys.sleep(0.1) # don't hit the API too hard
   }
   return(data)
 }
@@ -72,6 +72,7 @@ parsePreprintData <- function(item) {
       source = item$server,
       doi = item$doi,
       title = item$title,
+      abstract = item$abstract,
       authors = item$authors,
       author_corresponding = item$author_corresponding, 
       author_corresponding_institution = item$author_corresponding_institution,
@@ -111,11 +112,7 @@ preprints <- map_dfr(preprint_data, ~ map_dfr(.x, parsePreprintData)) %>%
     n_authors = map_int(authors, ~length(strsplit(., split = ";")[[1]]))
     ) %>%
   # some duplicates are included
-  distinct() %>%
-  # reorder elements
-  select(source, doi, posted_date, covid_preprint, title, n_versions, 
-         license, type, category, authors, n_authors, author_corresponding, 
-         author_corresponding_institution,  published_doi)
+  distinct()
 
 ```
 
@@ -123,7 +120,18 @@ preprints <- map_dfr(preprint_data, ~ map_dfr(.x, parsePreprintData)) %>%
 
 ```{r}
 
-preprints %>% write_csv("data/preprints_basic_20131101_20201031.csv")
+# Basic fields without abstracts
+preprints %>% 
+  # reorder elements
+  select(source, doi, posted_date, covid_preprint, title, n_versions, 
+         license, type, category, authors, n_authors, author_corresponding, 
+         author_corresponding_institution,  published_doi) %>% 
+  write_csv("data/preprints_basic_20131101_20201031.csv")
+
+# Abstracts (separately due to large file sizes)
+preprints %>%
+  select(doi, abstract) %>%
+  write_csv("data/preprint_abstracts_20131101_20201031.csv")
 
 ```
 
@@ -342,6 +350,7 @@ preprints_analysis <- preprints_analysis %>%
 # Preprint Word and Reference Counts
 
 ```{r}
+
 word_count <- function(string) {
   sapply(strsplit(string, " "), length)
 }
@@ -376,16 +385,20 @@ getWordCounts <- function(doi) {
     str_c(., collapse = " ")
   
   # Figure captions
-  fig_text <- data %>% 
-    html_nodes(".fig-caption") %>%
+  figs <- data %>% 
+    html_nodes(".fig-caption")
+  
+  fig_text <- figs %>%
     html_text(trim = TRUE) %>%
     str_trim(., side = "both") %>%
     str_remove_all(., "\\[(.*?)\\]") %>%
     str_c(., collapse = " ")
   
   # Table captions
-  table_text <- data %>% 
-    html_nodes(".table-caption") %>%
+  tables <- data %>% 
+    html_nodes(".table-caption")
+  
+  table_text <- tables %>%
     html_text(trim = TRUE) %>%
     str_trim(., side = "both") %>%
     str_remove_all(., "\\[(.*?)\\]") %>%
@@ -399,11 +412,8 @@ getWordCounts <- function(doi) {
     str_remove_all(., "\\[(.*?)\\]") %>%
     str_c(., collapse = " ")
   
-  n_words <- word_count(p_text) - 
-              word_count(abstract_text) -
-              word_count(fig_text) - 
-              word_count(table_text) -
-              word_count(ack_text)
+  # Calculate word counts (not including abstracts, fig and table captions, acknowledgements)
+  n_words <- word_count(p_text) - word_count(abstract_text) - word_count(fig_text) - word_count(table_text) - word_count(ack_text)
     
   n_refs <- html %>%
     html_nodes(xpath="//*[contains(@class, 'ref-cit')]") %>%
@@ -415,8 +425,10 @@ getWordCounts <- function(doi) {
   
   return(list(
     doi = doi,
-    word_count = n_words,
-    ref_count = n_refs
+    n_words = n_words,
+    n_refs = n_refs,
+    n_figs = length(figs),
+    n_tables = length(tables)
   ))
   
 }
@@ -430,13 +442,15 @@ biorxiv_preprints <- preprints_analysis %>%
   filter(source == "biorxiv")
 
 # set counter for progress bar
-pb <- progress_estimated(length(biorxiv_preprints$doi[1:10000]))
+pb <- progress_estimated(length(biorxiv_preprints$doi))
 
-word_counts <- map(biorxiv_preprints$doi[1:10000], ~ getWordCountsSafely(.))
+word_counts <- map(biorxiv_preprints$doi, ~ getWordCountsSafely(.))
 
 word_counts_df <- map_dfr(word_counts, ~ tibble(doi = .$result$doi,
-                                                n_words = .$result$word_count,
-                                                n_refs = .$result$ref_count)) %>%
+                                                n_words = .$result$n_words,
+                                                n_refs = .$result$n_refs,
+                                                n_figs = .$result$n_figs,
+                                                n_tables = .$result$n_tables)) %>%
 # remove cases where word and ref counts are zero - these are the result of a
 # full text not being available (e.g. if a new version is posted before the initial
 # version has had a full text added)
@@ -448,9 +462,9 @@ word_counts_df <- map_dfr(word_counts, ~ tibble(doi = .$result$doi,
 
 ```{r}
 # Merge with other preprint data
-preprints_analysis <- preprints_analysis %>%
+a <- preprints_analysis %>%
   left_join(word_counts_df, by = "doi") %>%
-  select(source:n_versions, n_words, n_refs, license:published_best_oa_license)
+  select(source:n_versions, n_words:n_tables, license:published_journal_is_oa)
   
 ```
 

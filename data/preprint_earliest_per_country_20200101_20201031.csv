@@ -1,0 +1,112 @@
+"","doi","author_corresponding_institution","institution_match_score","institution_match_type","institution_match_name","institution_match_country_name","institution_match_country_code","first_preprint","Country.Region","first_case","lag"
+"1","10.1101/2020.07.29.20164509","University of Bouira",1,"PHRASE","University of Bouira","Algeria","DZ",2020-08-01,"Algeria",2020-02-25,158
+"2","10.1101/2020.04.23.20077255","Instituto Interdisciplinario de Ciencias Básicas, Universidad Nacional de Cuyo, CONICET, Facultad de Ciencias Exactas y Naturales",1,"PHRASE","National University of Cuyo","Argentina","AR",2020-04-29,"Argentina",2020-03-03,57
+"3","10.1101/2020.02.13.20022822","Deakin University",1,"PHRASE","Deakin University","Australia","AU",2020-02-18,"Australia",2020-01-26,23
+"4","10.1101/2020.03.31.20048827","IST Austria",1,"PHRASE","Institute of Science and Technology Austria","Austria","AT",2020-04-02,"Austria",2020-02-25,37
+"5","10.1101/2020.10.13.337303","Western University",1,"PHRASE","Western Caspian University","Azerbaijan","AZ",2020-10-13,"Azerbaijan",2020-03-01,226
+"6","10.1101/2020.06.18.156810","Arabian Gulf University",1,"PHRASE","Arabian Gulf University","Bahrain","BH",2020-06-18,"Bahrain",2020-02-24,115
+"7","10.1101/2020.02.05.935072","Jahangirnagar University",1,"PHRASE","Jahangirnagar University","Bangladesh","BD",2020-02-11,"Bangladesh",2020-03-08,-26
+"8","10.1101/2020.05.27.20114538","The University of the West Indies",1,"PHRASE","University of the West Indies","Barbados","BB",2020-06-02,"Barbados",2020-03-17,77
+"9","10.1101/2020.05.05.078238","Belarusian State Medical University",1,"PHRASE","Belarusian State Medical University","Belarus","BY",2020-05-05,"Belarus",2020-02-28,67
+"10","10.1101/2020.03.03.20030627","Centre for Health Economic Research and Modelling Infectious Diseases,University of Antwerp, Antwerp, Belgium",1,"PHRASE","University of Antwerp","Belgium","BE",2020-03-06,"Belgium",2020-02-04,31
+"11","10.1101/2020.05.23.20111294","Laboratoire de Biomathematiques et d\'Estimations Forestieres, University of Abomey-Calavi",1,"PHRASE","Université d'Abomey-Calavi","Benin","BJ",2020-05-26,"Benin",2020-03-16,71
+"12","10.1101/2020.07.13.20152983","Universidad de Los Andes",1,"PHRASE","Universidad de Los Andes","Bolivia","BO",2020-07-15,"Bolivia",2020-03-11,126
+"13","10.1101/2020.04.15.20066308","Botswana International University of Science and Technology",1,"PHRASE","Botswana International University of Science and Technology","Botswana","BW",2020-04-18,"Botswana",2020-03-30,19
+"14","10.1101/2020.03.07.20032326","Sabin Medicina Diagnostica",1,"PHRASE","Sabin Medicina Diagnostica (Brazil)","Brazil","BR",2020-03-10,"Brazil",2020-02-26,13
+"15","10.1101/2020.05.04.20090043","PAPRSB Institute of Health Sciences, Universiti Brunei Darussalam, Brunei Darussalam",1,"PHRASE","Universiti Brunei Darussalam","Brunei","BN",2020-05-08,"Brunei",2020-03-09,60
+"16","10.1101/2020.09.05.20188953","Space Research and Technology Institute, Bulgarian Academy of Sciences",1,"PHRASE","Bulgarian Academy of Sciences","Bulgaria","BG",2020-09-08,"Bulgaria",2020-03-08,184
+"17","10.1101/2020.03.02.968818","Virology Unit, Institut Pasteur du Cambodge, Phnom Penh, Cambodia",1,"PHRASE","Institut Pasteur du Cambodge","Cambodia","KH",2020-03-05,"Cambodia",2020-01-27,38
+"18","10.1101/2020.02.03.932350","University of Western Ontario",1,"PHRASE","Western University","Canada","CA",2020-02-04,"Canada",2020-01-26,9
+"19","10.1101/2020.03.23.20042002","Universidad de Chile",1,"PHRASE","University of Chile","Chile","CL",2020-03-27,"Chile",2020-02-23,33
+"20","10.1101/2020.01.19.911669","Xiamen University",1,"PHRASE","Xiamen University","China","CN",2020-01-19,"China",2019-12-31,19
+"21","10.1101/2020.04.06.20056119","Universidad Nacional de Colombia",1,"PHRASE","National University of Colombia","Colombia","CO",2020-04-11,"Colombia",2020-03-06,36
+"22","10.1101/2020.10.17.343863","Instituto Clodomiro Picado, Facultad de Microbiología, Universidad de Costa Rica",1,"PHRASE","University of Costa Rica","Costa Rica","CR",2020-10-19,"Costa Rica",2020-03-06,227
+"23","10.1101/2020.07.11.20147157","University of Zagreb",1,"PHRASE","University of Zagreb","Croatia","HR",2020-07-14,"Croatia",2020-02-25,140
+"24","10.1101/2020.07.24.20153833","Center of Molecular immunology",1,"PHRASE","Center of Molecular Immunology (Cuba)","Cuba","CU",2020-07-30,"Cuba",2020-03-12,140
+"25","10.1101/2020.05.26.20113761","Near East University",1,"PHRASE","Near East University","Cyprus","CY",2020-05-27,"Cyprus",2020-03-09,79
+"26","10.1101/2020.03.31.20049155","Charles University",1,"PHRASE","Charles University","Czechia","CZ",2020-04-03,"Czechia",2020-03-01,33
+"27","10.1101/2020.03.20.000794","Center for Genomic Medicine, Copenhagen University Hospital, Copenhagen, Denmark and UKBB Universitats-Kinderspital, Department of Biomedicine, Basel, 4031 Base",1,"PHRASE","Gentofte Hospital","Denmark","DK",2020-03-21,"Denmark",2020-02-27,23
+"28","10.1101/2020.08.04.20167650","Universidad Iberoamericana",1,"PHRASE","Universidad Iberoamericana","Dominican Republic","DO",2020-08-06,"Dominican Republic",2020-03-01,158
+"29","10.1101/2020.05.21.20105858","Knowledge and Evaluation Research Unit, Mayo Clinic, Universidad Central del Ecuador",1,"PHRASE","Central University of Ecuador","Ecuador","EC",2020-05-26,"Ecuador",2020-03-01,86
+"30","10.1101/2020.04.01.019463","Cairo University",1,"PHRASE","Cairo University","Egypt","EG",2020-04-02,"Egypt",2020-02-14,48
+"31","10.1101/2020.06.23.166900","University of Tartu",1,"PHRASE","University of Tartu","Estonia","EE",2020-06-23,"Estonia",2020-02-27,117
+"32","10.1101/2020.04.02.20051052","Adigrat University, College of Health Sciences",1,"PHRASE","Adigrat University","Ethiopia","ET",2020-04-06,"Ethiopia",2020-03-13,24
+"33","10.1101/2020.04.13.038752","Faculty of Medicine and Health Technology, Tampere University and Fimlab Ltd, Tampere University Hospital, Finland",1,"PHRASE","Tampere University Hospital","Finland","FI",2020-04-13,"Finland",2020-01-29,75
+"34","10.1101/2020.02.05.20020792","INSERM, Paris, France",1,"PHRASE","Inserm","France","FR",2020-02-07,"France",2020-01-24,14
+"35","10.1101/2020.09.18.20195024","1) Infectious Diseases, AIDS and Clinical Immunology Research Center; 2) Caucasus International University",1,"PHRASE","AIDS and Clinical Immunology Research Center","Georgia","GE",2020-09-18,"Georgia",2020-02-26,205
+"36","10.1101/2020.01.29.925354","Robert Koch Institute",1,"PHRASE","Robert Koch Institute","Germany","DE",2020-01-30,"Germany",2020-01-27,3
+"37","10.1101/2020.06.03.20120196","University of Ghana",1,"PHRASE","University of Ghana","Ghana","GH",2020-06-05,"Ghana",2020-03-14,83
+"38","10.1101/2020.03.19.20038158","Department of Biology, University of Crete",1,"PHRASE","University of Crete","Greece","GR",2020-03-23,"Greece",2020-02-26,26
+"39","10.1101/2020.02.04.20020503","University of Szeged",1,"PHRASE","University of Szeged","Hungary","HU",2020-02-05,"Hungary",2020-03-04,-28
+"40","10.1101/2020.05.21.20108738","Icelandic Heart Association",1,"PHRASE","Icelandic Heart Association","Iceland","IS",2020-05-25,"Iceland",2020-02-28,87
+"41","10.1101/2020.01.30.927871","Indian Institute of Technology Delhi",1,"PHRASE","Indian Institute of Technology Delhi","India","IN",2020-01-31,"India",2020-01-30,1
+"42","10.1101/2020.05.13.20100545","Univ. of Indonesia",1,"PHRASE","University of Indonesia","Indonesia","ID",2020-05-16,"Indonesia",2020-03-02,75
+"43","10.1101/2020.03.05.20031518","Applied physiology research center, cardiovascular research institute, Isfahan University of Medical Sciences, Isfahan, Iran",1,"PHRASE","Isfahan University of Medical Sciences","Iran","IR",2020-03-08,"Iran",2020-02-19,18
+"44","10.1101/2020.10.19.20215384","University of Basrah",1,"PHRASE","University of Basrah","Iraq","IQ",2020-10-21,"Iraq",2020-02-24,240
+"45","10.1101/2020.03.29.009464","Veterinary Sciences Centre, University College Dublin, Belfield, Dublin 4, Ireland.",1,"PHRASE","University College Dublin","Ireland","IE",2020-03-30,"Ireland",2020-02-29,30
+"46","10.1101/2020.03.10.986398","The Hebrew University of Jerusalem",1,"PHRASE","Hebrew University of Jerusalem","Israel","IL",2020-03-12,"Israel",2020-02-21,20
+"47","10.1101/2020.02.02.931162","University of Bologna",1,"PHRASE","University of Bologna","Italy","IT",2020-02-04,"Italy",2020-01-31,4
+"48","10.1101/2020.05.18.100545","Ecole normale superieure",1,"PHRASE","École Normale Supérieure d'Abidjan","Ivory Coast","CI",2020-05-18,"Cote d'Ivoire",2020-03-11,68
+"49","10.1101/2020.01.26.20018754","Hokkaido University",1,"PHRASE","Hokkaido University","Japan","JP",2020-01-28,"Japan",2020-01-22,6
+"50","10.1101/2020.04.21.20064147","University of Jordan",1,"PHRASE","University of Jordan","Jordan","JO",2020-04-24,"Jordan",2020-03-03,52
+"51","10.1101/2020.04.08.20057638","Suleyman Demirel University",1,"PHRASE","Suleyman Demirel University","Kazakhstan","KZ",2020-04-10,"Kazakhstan",2020-03-13,28
+"52","10.1101/2020.04.30.20086447","Aga Khan University",1,"PHRASE","Aga Khan University","Kenya","KE",2020-05-05,"Kenya",2020-03-13,53
+"53","10.1101/2020.04.21.20073668","American University of the Middle East",1,"PHRASE","American University of the Middle East","Kuwait","KW",2020-04-24,"Kuwait",2020-02-24,60
+"54","10.1101/2020.09.08.20190504","Latvian Biomedical Research and Study Centre, Ratsupites 1, Riga, Latvia, LV-1067",1,"PHRASE","Latvian Biomedical Research and Study Centre","Latvia","LV",2020-09-09,"Latvia",2020-03-02,191
+"55","10.1101/2020.03.27.012013","Lebanese American University",1,"PHRASE","Lebanese American University","Lebanon","LB",2020-03-28,"Lebanon",2020-02-21,36
+"56","10.1101/2020.05.25.20109470","University of Tripoli",1,"PHRASE","University of Tripoli","Libya","LY",2020-05-26,"Libya",2020-03-24,63
+"57","10.1101/2020.04.27.20076422","Vilnius University",1,"PHRASE","Vilnius University","Lithuania","LT",2020-05-01,"Lithuania",2020-02-28,63
+"58","10.1101/2020.04.22.20075804","University of Luxembourg",1,"PHRASE","University of Luxembourg","Luxembourg","LU",2020-04-27,"Luxembourg",2020-02-29,58
+"59","10.1101/2020.02.07.20021188","Universiti Malaysia Sarawak",1,"PHRASE","Universiti Malaysia Sarawak","Malaysia","MY",2020-02-11,"Malaysia",2020-01-25,17
+"60","10.1101/2020.05.03.20087056","Mater Dei Hospital, Medical School of Malta",1,"PHRASE","Mater Dei Hospital","Malta","MT",2020-05-08,"Malta",2020-03-07,62
+"61","10.1101/2020.09.22.20199364","University of Mauritius",1,"PHRASE","University of Mauritius","Mauritius","MU",2020-09-22,"Mauritius",2020-03-18,188
+"62","10.1101/2020.03.23.20041590","Tecnologico de Monterrey",1,"PHRASE","Monterrey Institute of Technology and Higher Education","Mexico","MX",2020-03-27,"Mexico",2020-02-28,28
+"63","10.1101/2020.04.30.20086926","Chitwan Medical College",1,"PHRASE","Chitwan Medical College","Nepal","NP",2020-05-06,"Nepal",2020-01-25,102
+"64","10.1101/2020.01.27.20018986","National Institute for Public Health and the Environment",1,"PHRASE","National Institute for Public Health and the Environment","Netherlands","NL",2020-01-28,"Netherlands",2020-02-27,-30
+"65","10.1101/2020.02.07.20021139","Victoria University of Wellington",1,"PHRASE","Victoria University of Wellington","New Zealand","NZ",2020-02-11,"New Zealand",2020-02-28,-17
+"66","10.1101/2020.03.19.20038794","Nasarawa State University",1,"PHRASE","Nasarawa State University","Nigeria","NG",2020-03-24,"Nigeria",2020-02-28,25
+"67","10.1101/2020.04.15.20066068","Macedonian Academy of Sciences and Arts",1,"PHRASE","Macedonian Academy of Sciences and Arts","North Macedonia","MK",2020-04-17,"North Macedonia",2020-02-26,51
+"68","10.1101/2020.03.20.20038406","Norwegian Institute of Public Health",1,"PHRASE","Norwegian Institute of Public Health","Norway","NO",2020-03-23,"Norway",2020-02-26,26
+"69","10.1101/2020.04.02.20050666","Sohar University, Oman",1,"PHRASE","Sohar University","Oman","OM",2020-04-06,"Oman",2020-02-24,42
+"70","10.1101/2020.03.26.20044636","Dow University of Health Sciences",1,"PHRASE","Dow University of Health Sciences","Pakistan","PK",2020-03-31,"Pakistan",2020-02-25,35
+"71","10.1101/2020.08.12.20170852","Arab American University",1,"PHRASE","Arab American University","Palestinian Territory","PS",2020-08-14,"West Bank and Gaza",2020-03-05,162
+"72","10.1101/2020.07.31.20160929","Gorgas Memorial Institute For Health Studies",1,"PHRASE","Instituto Conmemorativo Gorgas de Estudios de la Salud","Panama","PA",2020-08-04,"Panama",2020-03-10,147
+"73","10.1101/2020.05.22.20107292","Grupo de Salud Materna y Perinatal. Direccion de Investigacion en Salud Publica, Instituto Nacional de Salud.",1,"PHRASE","Instituto Nacional de Salud","Peru","PE",2020-05-26,"Peru",2020-03-06,81
+"74","10.1101/2020.03.27.20045336","University of the Philippines Los Banos",1,"PHRASE","University of the Philippines Los Baños","Philippines","PH",2020-03-30,"Philippines",2020-01-30,60
+"75","10.1101/2020.02.27.968008","Tunneling Group, Biotechnology Centre, Silesian University of Technology",1,"PHRASE","Silesian University of Technology","Poland","PL",2020-03-02,"Poland",2020-03-04,-2
+"76","10.1101/2020.02.24.20027268","Laboratory of Biostatistics and Medical Informatics, Faculty of Medicine, University of Coimbra, Portugal; iCBR - Coimbra Institute for Clinical and Biomedical",1,"PHRASE","University of Coimbra","Portugal","PT",2020-02-25,"Portugal",2020-03-02,-6
+"77","10.1101/2020.04.07.029488","Hamad Bin Khalifa University",1,"PHRASE","Hamad bin Khalifa University","Qatar","QA",2020-04-09,"Qatar",2020-02-29,40
+"78","10.1101/2020.05.01.20087569","Carol Davila University of Medicine and Pharmacy",1,"PHRASE","Carol Davila University of Medicine and Pharmacy","Romania","RO",2020-05-06,"Romania",2020-02-26,70
+"79","10.1101/2020.04.10.20058222","ITMO University",1,"PHRASE","ITMO University","Russia","RU",2020-04-11,"Russia",2020-01-31,71
+"80","10.1101/2020.05.08.20095679","Pulmonology department, King Abdullah Medical City, Mecca, Saudi Arabia.",1,"PHRASE","King Abdullah Medical City","Saudi Arabia","SA",2020-05-11,"Saudi Arabia",2020-03-02,70
+"81","10.1101/2020.05.13.093690","Laboratory for Molecular Biomedicine, Institute of Molecular Genetics and Genetic Engineering, University of Belgrade, Belgrade, Serbia",1,"PHRASE","University of Belgrade","Serbia","RS",2020-05-13,"Serbia",2020-03-06,68
+"82","10.1101/2020.02.17.20024075","National University of Singapore",1,"PHRASE","National University of Singapore","Singapore","SG",2020-02-20,"Singapore",2020-01-23,28
+"83","10.1101/2020.05.06.074039","Ecole Normale Superieure, PSL and CNRS",1,"PHRASE","Thyssenkrupp (Slovakia)","Slovakia","SK",2020-05-07,"Slovakia",2020-03-06,62
+"84","10.1101/2020.02.16.20023606","university of ljubljana",1,"PHRASE","University of Ljubljana","Slovenia","SI",2020-02-18,"Slovenia",2020-03-05,-16
+"85","10.1101/2020.06.18.20135053","SIMAD University",1,"PHRASE","SIMAD University","Somalia","SO",2020-06-20,"Somalia",2020-03-16,96
+"86","10.1101/2020.01.31.928796","KwaZulu-Natal Research Innovation and Sequencing Platform (KRISP), University of KwaZulu-Natal",1,"PHRASE","University of KwaZulu-Natal","South Africa","ZA",2020-02-02,"South Africa",2020-03-05,-32
+"87","10.1101/2020.01.31.929547","Department of Microbiology, College of Natural Sciences, Dankook University, Cheonan, Republic of Korea",1,"PHRASE","Dankook University","South Korea","KR",2020-02-02,"Korea, South",2020-01-22,11
+"88","10.1101/2020.03.01.20029801","University of Zaragoza",1,"PHRASE","University of Zaragoza","Spain","ES",2020-03-06,"Spain",2020-02-01,34
+"89","10.1101/2020.04.11.20061481","Faculty of Medicine, University of Kelaniya, Sri Lanka",1,"PHRASE","University of Kelaniya","Sri Lanka","LK",2020-04-16,"Sri Lanka",2020-01-27,80
+"90","10.1101/2020.02.04.934232","Department of Pharmacy, University of Khartoum, Khartoum, Sudan",1,"PHRASE","University of Khartoum","Sudan","SD",2020-02-11,"Sudan",2020-03-13,-31
+"91","10.1101/2020.03.20.20039594","Umea University",1,"PHRASE","Umeå University","Sweden","SE",2020-03-23,"Sweden",2020-02-01,51
+"92","10.1101/2020.01.23.917351","Institute of Social and Preventive Medicine, University of Bern, Bern, Switzerland",1,"PHRASE","University of Bern","Switzerland","CH",2020-01-24,"Switzerland",2020-02-25,-32
+"93","10.1101/2020.07.11.20151035","university of aleppo",1,"PHRASE","University of Aleppo","Syria","SY",2020-07-14,"Syria",2020-03-22,114
+"94","10.1101/2020.02.21.960492","National Pingtung University of Science and Technology",1,"PHRASE","National Pingtung University of Science and Technology","Taiwan","TW",2020-02-23,"Taiwan*",2020-01-22,32
+"95","10.1101/2020.04.15.20066845","Ifakara Health Institute",1,"PHRASE","Ifakara Health Institute","Tanzania","TZ",2020-04-20,"Tanzania",2020-03-16,35
+"96","10.1101/2020.03.28.20044339","College of Graduate Studies, Walailak University, Nakhon Si Thammarat, 80160, Thailand",1,"PHRASE","Walailak University","Thailand","TH",2020-03-31,"Thailand",2020-01-22,69
+"97","10.1101/2020.08.07.20163840","Universite de Lome, Departement de Sante Publique, Lome, Togo",1,"PHRASE","University of Lomé","Togo","TG",2020-08-07,"Togo",2020-03-06,154
+"98","10.1101/2020.04.23.20076802","University of Carthage; National Institue of Applied Sciences and Technology",1,"PHRASE","University of Carthage","Tunisia","TN",2020-04-28,"Tunisia",2020-03-04,55
+"99","10.1101/2020.03.15.992438","Abdullah Gul University",1,"PHRASE","Abdullah Gül University","Turkey","TR",2020-03-17,"Turkey",2020-03-11,6
+"100","10.1101/2020.04.02.20051086","Busitema University, Tororo, Uganda",1,"PHRASE","Busitema University","Uganda","UG",2020-04-06,"Uganda",2020-03-21,16
+"101","10.1101/2020.04.07.20056994","National Aviation University",1,"PHRASE","National Aviation University","Ukraine","UA",2020-04-10,"Ukraine",2020-03-03,38
+"102","10.1101/2020.03.09.20033381","Ph.D student, Institute of Public Health, College of Medicine and Health Sciences, United Arab Emirates University, Al Ain, UAE",1,"PHRASE","United Arab Emirates University","United Arab Emirates","AE",2020-03-13,"United Arab Emirates",2020-01-29,44
+"103","10.1101/2020.01.15.907873","University of Liverpool",1,"PHRASE","University of Liverpool","United Kingdom","GB",2020-01-15,"United Kingdom",2020-01-31,-16
+"104","10.1101/2020.01.12.902452","University at Albany, SUNY",1,"PHRASE","University at Albany, State University of New York","United States","US",2020-01-16,"US",2020-01-22,-6
+"105","10.1101/2020.05.13.093609","Laboratorio de Virologia Molecular, Centro de Investigaciones Nucleares, Facultad de Ciencias, Universidad de la Republica, Montevideo, Uruguay; Laboratorio de",1,"PHRASE","University of the Republic","Uruguay","UY",2020-05-13,"Uruguay",2020-03-13,61
+"106","10.1101/2020.05.12.091082","UCSF",NA,NA,NA,"USA","US",2020-05-12,"US",2020-01-22,111
+"107","10.1101/2020.07.12.199521","Instituto Venezolano de Investigaciones Científicas",1,"PHRASE","Instituto Venezolano de Investigaciones Científicas","Venezuela","VE",2020-07-13,"Venezuela",2020-03-14,121
+"108","10.1101/2020.05.05.20092635","Hanoi Medical University",1,"PHRASE","Hanoi Medical University","Vietnam","VN",2020-05-08,"Vietnam",2020-01-23,106
+"109","10.1101/2020.09.03.20187880","Lebanese International University and Lebanese University",1,"PHRASE","Lebanese International University","Yemen","YE",2020-09-05,"Yemen",2020-04-10,148
+"110","10.1101/2020.07.12.20152124","Department of Biomedical Sciences, School of Health Sciences, University of Zambia, Lusaka, Zambia / Department of Biomedical Sciences, School of Health Science",1,"PHRASE","University of Zambia","Zambia","ZM",2020-07-14,"Zambia",2020-03-18,118
+"111","10.1101/2020.06.16.20130278","Department of Nutrition, Dietetics and Food Sciences, University of Zimbabwe, P O Box MP 167, Mt Pleasant, Harare, Zimbabwe",1,"PHRASE","University of Zimbabwe","Zimbabwe","ZW",2020-06-19,"Zimbabwe",2020-03-20,91

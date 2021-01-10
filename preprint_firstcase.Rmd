@@ -7,7 +7,6 @@ title: "R Notebook"
 ```{r}
 
 library(tidyverse)
-library(magrittr)
 
 ```
 
@@ -15,10 +14,9 @@ library(magrittr)
 
 ```{r}
 
-preprints <- read_csv("data/preprints_full_20190901_20200430.csv")
+preprints <- read_csv("data/preprints_full_20190101_20201031.csv")
 
 # Read in Johns Hopkins global case time series data (reference: Dong E, Du H, Gardner L. An interactive web-based dashboard to track COVID-19 in real time. Lancet Infect Dis)
-
 global_cases <- read.csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv")
 
 ```
@@ -29,67 +27,42 @@ global_cases <- read.csv("https://raw.githubusercontent.com/CSSEGISandData/COVID
 
 # Apply manual correction to terms that lead to misdefined first cases, and terms among the top 50 most common terms that are matched incorrectly
 
-preprints %<>% 
-  mutate(
-    institution_match_country_name = case_when(
-      author_corresponding_institution == "Universidad de los Andes" ~ "Colombia",
-      author_corresponding_institution == "CAS Key Laboratory of Pathogenic Microbiology and Immunology, Institute of Microbiology, Center for Influenza Research and Early-warning (CASCIRE), Chinese Acad" ~ "China",
-      author_corresponding_institution == "Metabiota" ~ "Canada",
-      author_corresponding_institution == "Jinan University" ~ "China",
-      author_corresponding_institution == "The School of Information Science and Technology, Jinan University" ~ "China",
-      author_corresponding_institution == "National Research Council" ~ "Italy",
-      author_corresponding_institution == "Northeastern University" ~ "United States",
-      author_corresponding_institution == "Georgetown University" ~ "United States",
-      author_corresponding_institution == "Institute of Virology, Charite-Universitaetsmedizin Berlin, corporate member of Freie Universitaet Berlin, Humboldt-Universitaet zu Berlin, and Berlin Institute" ~ "Germany",
-      author_corresponding_institution == "CNRS" ~ "France",
-      author_corresponding_institution == "UCSF" ~ "USA",
-      TRUE ~ institution_match_country_name),
-    institution_match_country_code = case_when(
-      author_corresponding_institution == "Universidad de los Andes" ~ "CO",
-      author_corresponding_institution == "CAS Key Laboratory of Pathogenic Microbiology and Immunology, Institute of Microbiology, Center for Influenza Research and Early-warning (CASCIRE), Chinese Acad" ~ "CN",
-      author_corresponding_institution == "Metabiota" ~ "CA",
-      author_corresponding_institution == "Jinan University" ~ "CN",
-      author_corresponding_institution == "The School of Information Science and Technology, Jinan University" ~ "CN",
-      author_corresponding_institution == "National Research Council" ~ "IT",
-      author_corresponding_institution == "Northeastern University" ~ "US",
-      author_corresponding_institution == "Georgetown University" ~ "US",
-      author_corresponding_institution == "Institute of Virology, Charite-Universitaetsmedizin Berlin, corporate member of Freie Universitaet Berlin, Humboldt-Universitaet zu Berlin, and Berlin Institute" ~ "DE",
-      author_corresponding_institution == "CNRS" ~ "FR",
-      author_corresponding_institution == "UCSF" ~ "US",
-      TRUE ~ institution_match_country_code)
-  )
-
-# Set minimum ROR API affiliation matching score acceptable in matching author affiliations
-# Not currently used as only matches with chosen == TRUE are retained in getAuthorAffiliations(), which all have score >= 0.9
-score_threshold <- 0.9
-
 # Identify date of first confirmed case per country
 global_cases %<>% 
   filter(!(Country.Region %in% c("Diamond Princess","Kosovo","MS Zaandam"))) %>%
-  mutate(Country.Region = case_when(Province.State == "Guadeloupe" ~ "Guadeloupe", TRUE ~ as.character(Country.Region))) %>% # Overwrite Guadeloupe as country to match preprint author data
+  mutate(Country.Region = case_when(
+    Province.State == "Guadeloupe" ~ "Guadeloupe", # Overwrite Guadeloupe as country to match preprint author data
+    TRUE ~ as.character(Country.Region))) %>% 
   select(-c(Province.State, Lat, Long)) %>%
   gather(date, value, -Country.Region) %>%
-  mutate(date = as.Date(date, format = "X%m.%d.%y"), country_code = countrycode::countrycode(Country.Region, origin = 'country.name', destination = 'iso2c')) %>%
+  mutate(date = as.Date(date, format = "X%m.%d.%y"), 
+         country_code = countrycode::countrycode(Country.Region, 
+                                                 origin = 'country.name', 
+                                                 destination = 'iso2c')) %>%
   group_by(Country.Region, country_code) %>%
   filter(value != 0) %>%
   summarise(first_case = min(date))
 
 # Identify date of first preprint per country and merge with first case, calculate time difference between them
 case_author_dates_df <- preprints %>% 
-  filter(covid_preprint == TRUE & institution_match_score >= score_threshold) %>%
-  select(doi, author_corresponding_institution, starts_with("institution"), posted_date) %>%
-  mutate(posted_date = as.Date(posted_date)) %>%
-  filter(posted_date >= "2020-01-01", posted_date <= "2020-04-30") %>%                    # Subset preprints to COVID-19 period (Jan 1 - Apr 30)
-  group_by(institution_match_country_name, institution_match_country_code) %>%
+  filter(covid_preprint == TRUE) %>%
+  select(doi, author_corresponding_institution, 
+         starts_with("institution"), posted_date) %>%
+  filter(posted_date >= "2020-01-01", 
+         posted_date <= "2020-10-31") %>%
+  group_by(institution_match_country_name, 
+           institution_match_country_code) %>%
   slice(which.min(posted_date)) %>%
   rename(first_preprint = posted_date) %>% 
-  ungroup %>% 
+  ungroup() %>% 
   full_join(global_cases, by = c("institution_match_country_code" = "country_code")) %>%
-  mutate(first_case = if_else(institution_match_country_code == "CN", as.Date("2019-12-31", format="%Y-%m-%d"), first_case)) %>% # Override first case for China
+  mutate(first_case = if_else(institution_match_country_code == "CN", 
+                              as.Date("2019-12-31", format="%Y-%m-%d"), 
+                              first_case)) %>% # Override first case for China
   mutate(lag = first_preprint - first_case)
 
 # Write csv
-write.csv(case_author_dates_df %>% filter(!is.na(first_preprint) & !is.na(first_case)), "data\\preprint_earliest_per_country_20200101_20200430.csv")
+write.csv(case_author_dates_df %>% filter(!is.na(first_preprint) & !is.na(first_case)), "data\\preprint_earliest_per_country_20200101_20201031.csv")
 
 no_preprints <- case_author_dates_df %>% filter(is.na(first_preprint)) %>% select(Country.Region, first_case) # Identify countries/territories with no associated corresponding authors of COVID-19 papers
 no_cases <- case_author_dates_df %>% filter(is.na(first_case)) %>% select(institution_match_country_name, first_preprint) # Identify countries/territories without case data for COVID-19
