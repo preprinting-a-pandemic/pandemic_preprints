@@ -41,20 +41,30 @@ theme_set(theme_minimal() +
 # Make sure axis labels (e.g. month names) are in English
 Sys.setlocale("LC_ALL", "English")
 
-# Create custom date scale for time-series plots
-custom_date_scale <- function(start_date, end_date) {
+# Create custom date scales for time-series plots
+custom_week_scale <- function(start_date, end_date, format = "%d-%b") {
   scale_x_date(date_breaks = "1 week",
                date_minor_breaks = "1 day",
-               date_labels = "%b %d",
+               date_labels = format,
+               expand = c(0, 0),
+               limits = c(ymd(start_date), ymd(end_date)))
+}
+custom_month_scale <- function(start_date, end_date, format = "%d-%b") {
+  scale_x_date(date_breaks = "1 month",
+               date_minor_breaks = "1 month",
+               date_labels = format,
                expand = c(0, 0),
                limits = c(ymd(start_date), ymd(end_date)))
 }
 
 ```
 
-# Helper functions
+# Helper variables and functions
 
 ```{r}
+
+analysis_start <- ymd("2020-01-01")
+analysis_end <- ymd("2020-10-31")
 
 assign_covid_preprint <- function(d) {
   d %>%
@@ -82,41 +92,40 @@ clean_names <- function(d) {
 covid <- read_csv("https://raw.githubusercontent.com/datasets/covid-19/master/data/worldwide-aggregate.csv")
 
 # Full dataset of preprints from the launch of bioRxiv (Nov 2013) to the end of
-# our study period (April 2020). Due to GitHub size limitations, data is split
-# between two files which must be subsequently bound together
-preprint_1 <- read.csv("data/preprints_basic_20131101_20181231.csv", stringsAsFactors = FALSE)   
-preprint_2 <- read.csv("data/preprints_basic_20190101_20200430.csv", stringsAsFactors = FALSE)
-preprints_all <- bind_rows(preprint_1, preprint_2)
-rm(preprint_1, preprint_2)
+# our study period (October 2020).
+preprints_all <- read_csv("data/preprints_basic_20131101_20201031.csv")
+
+# Abstracts of all preprints
+#preprint_abstracts <- read_csv("data/preprint_abstracts_20131101_20201031.csv")
 
 # More detailed preprint metadata covering period Sept 2019 - April 2020
-preprints <- read_csv("data/preprints_full_20190901_20200430.csv",
+preprints <- read_csv("data/preprints_full_20190101_20201031.csv",
                       col_types = cols(n_refs = "n", n_words = "n"))
 
 # Preprint usage data (PDF downloads, abstract views)
-preprint_usage <- read_csv("data/preprint_usage_20190901_20200430.csv")
+preprint_usage <- read_csv("data/preprint_usage_20190101_20201031.csv")
 
 # Preprint citation data
-preprint_citations <- read_csv("data/preprint_citations_20190901_20200430.csv")
+preprint_citations <- read_csv("data/preprint_citations_20190101_20201031.csv")
 
 # Preprint altmetrics data
-preprint_altmetrics <- read_csv("data/preprint_altmetrics_20190901_20200430.csv")
+preprint_altmetrics <- read_csv("data/preprint_altmetrics_20190101_20201031.csv")
 
 # Data of preprint timing (i.e. timing of first preprint per country - see Figure 2)
-preprint_timing <- read_csv("data/preprint_earliest_per_country_20200101_20200430.csv")
+preprint_timing <- read_csv("data/preprint_earliest_per_country_20200101_20201031.csv")
 
 # Preprint comments (counts) data
-preprint_comments <- read_csv("data/preprint_comments_20190901_20200430.csv")
+preprint_comments <- read_csv("data/preprint_comments_20190101_20201031.csv")
 
 # Full dataset of preprints from other servers (note: dataset is generated
 # externally and updated weekly)
 preprints_other <- read_csv("https://raw.githubusercontent.com/nicholasmfraser/covid19_preprints/master/data/covid19_preprints.csv", col_types = "cccccc")
 
 # Dataset of journal articles on COVID-19 from Dimensions
-journal_articles <- read_csv("data/journal_articles_20200101_20200430.csv")
+journal_articles <- read_csv("data/journal_articles_20200101_20201031.csv")
 
 # Policy documents
-policy_docs <- read_csv("data/policy_docs.csv")
+#policy_docs <- read_csv("data/policy_docs.csv")
 
 ```
 
@@ -126,48 +135,37 @@ policy_docs <- read_csv("data/policy_docs.csv")
 
 # Panel A: Development of COVID-19 cases and deaths
 
-# Define text and coordinates for annotations
-text_1 <- "WHO declares COVID-19 \n outbreak a Public Health \n Emergency of \n International Concern"
-text_2 <- "WHO declares COVID-19 \n outbreak a pandemic"
+# Define  coordinates for annotations
 x_1 <- ymd("2020-01-30")
 x_2 <- ymd("2020-03-11")
-y_1 <- covid %>% filter(Date == "2020-01-30") %>% pull(Confirmed)
-y_2 <- covid %>% filter(Date == "2020-03-11") %>% pull(Confirmed)
-line_length <- 1000000
-spacing <- 100000
+y <- 50000000
 
 p1A <- covid %>%
-  filter(Date <= "2020-04-30") %>%
+  filter(
+    Date >= analysis_start,
+    Date <= analysis_end) %>%
   select(Date, Confirmed, Deaths) %>%
   rename(Cases = Confirmed) %>%
   pivot_longer(Cases:Deaths) %>%
   ggplot(aes(x = Date, y = value, color = name)) +
   geom_line(size = 1) +
   geom_point(size = 1, shape = 21, fill = "white", stroke = 1) +
-  annotate("text", x = x_1, y = y_1 + line_length + spacing, 
-           label = text_1, vjust = 0, size = 3) +
-  annotate("segment", x = x_1, xend = x_1,
-           y = y_1 + line_length, yend = y_1 + spacing,
-           arrow = arrow(length = unit(0.2, "cm")), size = 0.5, 
-           lineend = "round", linejoin = "round") +
-  annotate("text", x = x_2, y = y_2 + line_length + spacing, 
-           label = text_2, vjust = 0, size = 3) +
-  annotate("segment", x = x_2, xend = x_2,
-           y = y_2 + line_length, yend = y_2 + spacing,
-           arrow = arrow(length = unit(0.2, "cm")), size = 0.5, 
-           lineend = "round", linejoin = "round") +
-  labs(x = "", y = "Confirmed Cases / Deaths", color = "") +
-  scale_y_continuous(labels = scales::comma) +
-  custom_date_scale("2020-01-01", "2020-04-30") +
-  scale_color_manual(values = c("grey60", "grey30")) +
+  geom_vline(aes(xintercept = x_1), size = 0.5, linetype = "dotted") +
+  geom_vline(aes(xintercept = x_2), size = 0.5, linetype = "dotted") +
+  geom_text(aes(x = x_1, y = y), label = " (i)", hjust = 0, color = "black") +
+  geom_text(aes(x = x_2, y = y), label = " (ii)", hjust = 0, color = "black") +
+  labs(x = "Date", y = "Confirmed Cases / Deaths", color = "") +
+  scale_y_log10(labels = scales::comma) +
+  custom_month_scale(analysis_start, analysis_end + 1) +
+  scale_color_manual(values = qualitative_hcl(2, palette = "Dynamic")) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   ggsave("outputs/figures/partials/Figure_1A.png", width = 10, height = 4)
 
 # Panel B: Number of journal articles and preprints on COVID-19
 
 p1B <- preprints_other %>%
-  mutate(posted_date = as.Date(posted_date), type = "Preprints") %>%
-  bind_rows(journal_articles %>% mutate(posted_date = created,
+  mutate(posted_date = ymd(posted_date), type = "Preprints") %>%
+  bind_rows(journal_articles %>% mutate(posted_date = cr_created,
                                         type = "Journal Articles")) %>%
   count(type, posted_date) %>%
   complete(posted_date, nesting(type), fill = list(n = 0)) %>%
@@ -176,11 +174,11 @@ p1B <- preprints_other %>%
          total_n = sum(n)) %>%
   ggplot() +
   geom_area(aes(x = posted_date, y = cumulative_n, fill = reorder(type, -total_n)), 
-            color = "grey50", size = 0.5) +
-  labs(x = "", y = "Articles / Preprints", fill = "") +
+            color = "grey50", size = 0.5, alpha = 0.75) +
+  labs(x = "Publication date", y = "Articles / Preprints", fill = "") +
   scale_y_continuous(labels = scales::comma) +
-  custom_date_scale("2020-01-01", "2020-04-30") +
-  scale_fill_manual(values = qualitative_hcl(2, palette = "Set2")) +
+  custom_month_scale(analysis_start, analysis_end + 1) +
+  scale_fill_manual(values = qualitative_hcl(2, palette = "Cold")) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   ggsave("outputs/figures/partials/Figure_1B.png", width = 10, height = 4)
 
@@ -190,7 +188,9 @@ p1B <- preprints_other %>%
 n_min <- 160
 
 top_repositories <- preprints_other %>%
-  filter(posted_date <= "2020-04-30") %>%
+  filter(
+    posted_date >= analysis_start,
+    posted_date <= analysis_end) %>%
   count(source) %>%
   filter(n > n_min) %>%
   arrange(desc(n)) %>%
@@ -199,7 +199,7 @@ top_repositories <- preprints_other %>%
 fct_order <- c(top_repositories, "Other")
 
 p1C <- preprints_other %>%
-  mutate(posted_date = as.Date(posted_date),
+  mutate(posted_date = ymd(posted_date),
          source = case_when(
            source %in% top_repositories ~ source,
            T ~ "Other"),
@@ -212,17 +212,17 @@ p1C <- preprints_other %>%
   ggplot() +
   geom_area(aes(x = posted_date, y = cumulative_n, fill = source), 
             color = "grey50", size = 0.5) +
-  labs(x = "", y = "Preprints", fill = "") +
+  labs(x = "Publication date", y = "Preprints", fill = "") +
   scale_y_continuous(labels = scales::comma) +
-  custom_date_scale("2020-01-01", "2020-04-30") +
-  scale_fill_manual(values = qualitative_hcl(12, palette = "Set2")) +
+  custom_month_scale(analysis_start, analysis_end + 1) +
+  scale_fill_manual(values = qualitative_hcl(16, palette = "Set2")) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   ggsave("outputs/figures/partials/Figure_1C.png", width = 10, height = 4)
 
 # Patchwork
 p1A + p1B + p1C + plot_layout(ncol = 1) +
   plot_annotation(tag_levels = "A") +
-  ggsave("outputs/figures/Figure_1.png", width = 10, height = 9)
+  ggsave("outputs/figures/Figure_1.png", width = 10, height = 10)
 
 ```
 
@@ -234,10 +234,6 @@ p1A + p1B + p1C + plot_layout(ncol = 1) +
 search_string_ebola <- "ebola|ZEBOV"
 search_string_zika <- "zika|ZIKV"
 
-# Set dates of all epidemics
-covid_start <- "2020-01-01"
-covid_end <- "2020-04-30"
-
 ebola_start <- "2014-01-24"
 ebola_end <- "2016-06-09"  # Outbreak declared ended: https://apps.who.int/iris/bitstream/handle/10665/208883/ebolasitrep_10Jun2016_eng.pdf
 
@@ -246,25 +242,27 @@ zika_end <- "2016-11-18"  # Public health emergency declared ended: https://www.
 
 # Determine preprint counts of previous epidemics
 covid_counts <- preprints_all %>% 
-  filter(posted_date >= covid_start) %>% 
-  rename(epi_preprint = covid_preprint) %>% 
-  count(epi_preprint) %>%
-  mutate(epidemic = "COVID-19")
+  filter(posted_date >= analysis_start & posted_date <= analysis_end) %>% 
+  count(covid_preprint) %>%
+  mutate(epidemic = "COVID-19") %>%
+  rename(epi_preprint = covid_preprint)
 
-ebola_counts <- preprints_all %>% 
+ebola_counts <- preprints_all %>%
+  inner_join(preprint_abstracts, by = "doi") %>%
   filter(posted_date >= ebola_start & posted_date <= ebola_end) %>%
   mutate(epi_preprint = case_when(
-    str_detect(title, regex(search_string_ebola, ignore_case = TRUE)) ~ T, 
+    str_detect(title, regex(search_string_ebola, ignore_case = TRUE)) ~ T,
     str_detect(abstract, regex(search_string_ebola, ignore_case = TRUE)) ~ T,
     T ~ F)) %>% 
   count(epi_preprint) %>%
   mutate(epidemic = "Western Africa Ebola virus")
 
 zika_counts <- preprints_all %>% 
+  inner_join(preprint_abstracts, by = "doi") %>%
   filter(posted_date >= zika_start & posted_date <= zika_end) %>%
   mutate(epi_preprint = case_when(
-    str_detect(title, regex(search_string_zika, ignore_case = TRUE)) ~ T, 
-    str_detect(abstract, regex(search_string_zika, ignore_case = TRUE)) ~ T,
+    str_detect(title, regex(search_string_zika, ignore_case = TRUE)) ~ T,
+    str_detect(abstract, regex(search_string_ebola, ignore_case = TRUE)) ~ T,
     T ~ F)) %>% 
   count(epi_preprint) %>%
   mutate(epidemic = "Zika virus")
@@ -274,7 +272,13 @@ pS1A <- bind_rows(covid_counts, ebola_counts, zika_counts) %>%
   mutate(epi_preprint = case_when(
     epi_preprint == T ~ "Epidemic preprints",
     epi_preprint == F ~ "Non-epidemic preprints"),
-    epidemic = factor(epidemic, levels=c("Western Africa Ebola virus", "Zika virus", "COVID-19"))) %>%
+    epidemic = factor(epidemic, 
+                      levels = c("Western Africa Ebola virus", 
+                                 "Zika virus", 
+                                 "COVID-19"),
+                      labels = c("Western Africa Ebola virus\n(2014/04/24 - 2016/06/09)", 
+                                 "Zika virus\n(2015/03/02 - 2016/11/18)", 
+                                 "COVID-19\n(2020/01/01 - 2020/10/31)"))) %>%
   ggplot(aes(x = epi_preprint, y = n, colour = epi_preprint, fill = epi_preprint)) +
   geom_col(color = "grey50", size = 0.25) +
   labs(x = "", y = "Total preprints", fill = "", color = "") +
@@ -286,8 +290,8 @@ pS1A <- bind_rows(covid_counts, ebola_counts, zika_counts) %>%
   ggsave("outputs/figures/partials/Figure_S1A.png", width = 10, height = 4)
 
 pS1B <-journal_articles %>% 
-  count(article_is_oa, created) %>%
-  complete(created, nesting(article_is_oa), fill = list(n = 0)) %>%
+  count(article_is_oa, cr_created) %>%
+  complete(cr_created, nesting(article_is_oa), fill = list(n = 0)) %>%
   group_by(article_is_oa) %>%
   mutate(cumulative_n = cumsum(n),
          total_n = sum(n)) %>%
@@ -296,13 +300,13 @@ pS1B <-journal_articles %>%
     article_is_oa == T ~ "Open Access",
     T  ~ "Closed Access")) %>%
   ggplot() +
-  geom_area(aes(x = created, y = cumulative_n, 
+  geom_area(aes(x = cr_created, y = cumulative_n, 
                 fill = reorder(article_is_oa, -total_n)), 
-            color = "grey50", size = 0.25) +
-  labs(x = "", y = "Journal Articles", fill = "") +
+            color = "grey50", size = 0.5) +
+  labs(x = "Publication Date", y = "Published articles", fill = "") +
   scale_y_continuous(labels = scales::comma) +
-  custom_date_scale("2020-01-01", "2020-04-30") +
-  scale_fill_manual(values = c("grey80", "grey50")) +
+  custom_month_scale("2020-01-01", "2020-11-01", format = "%d-%b") +
+  scale_fill_manual(values = qualitative_hcl(2, palette = "Dynamic")) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   ggsave("outputs/figures/partials/Figure_S1B.png", width = 10, height = 4)
 
@@ -312,8 +316,588 @@ pS1A + pS1B + plot_layout(ncol = 1) +
 
 ```
 
-# Figure 2: Preprint attributes
+# Figure 2: Preprint properties
 
+```{r}
+
+# Panel A: COVID vs non-COVID preprints for each server
+
+p2A_properties <- preprints %>%
+  filter(posted_date >= analysis_start,
+         posted_date <= analysis_end) %>%
+  assign_covid_preprint() %>%
+  mutate(posted_month = floor_date(posted_date, unit = "month")) %>%
+  count(covid_preprint, posted_month) %>%
+  complete(posted_month, nesting(covid_preprint), fill = list(n = 0)) %>%
+  ggplot(aes(x = posted_month, y = n, fill = covid_preprint)) +
+  geom_col(color = "grey50", size = 0.25,
+           position = position_dodge(preserve = "single")) +
+  labs(x = "Posted month", y = "Preprints deposited", fill = "") +
+  scale_y_continuous(labels = scales::comma) +
+  scale_x_date(date_breaks = "1 month",
+               date_minor_breaks = "1 month",
+               date_labels = "%b") +
+  scale_fill_manual(values = qualitative_hcl(2, palette = "Set2")) +
+  ggsave("outputs/figures/partials/Figure_2A_properties.png", width = 6, height = 4)
+
+p2B_properties <- preprints %>%
+  filter(posted_date >= analysis_start,
+         posted_date <= analysis_end) %>%
+  count(covid_preprint, n_versions) %>%
+  group_by(covid_preprint) %>%
+  mutate(proportion = (n/sum(n)) * 100) %>%
+  ungroup() %>%
+  assign_covid_preprint() %>%
+  ggplot(aes(x = n_versions, y = proportion, fill = covid_preprint)) +
+  geom_col(color = "grey50", position = position_dodge(preserve = "single"), width = 0.75, size = 0.25) +
+  labs(x = "Number of versions", y = "% of preprints", fill = "") +
+  scale_x_continuous(breaks = seq(1:10)) +
+  scale_fill_manual(values = qualitative_hcl(2, palette = "Set2")) +
+  guides(fill = FALSE) +
+  ggsave("outputs/figures/partials/Figure_2B_properties.png", width = 5, height = 4)
+
+p2C_properties <- preprints %>%
+  filter(posted_date >= analysis_start,
+         posted_date <= analysis_end) %>%
+  mutate(license = case_when(
+    str_detect(license, "cc0") ~ "cc0",
+    T ~ license
+  )) %>%
+  count(covid_preprint, license) %>%
+  na.omit() %>%
+  group_by(covid_preprint) %>%
+  mutate(proportion = (n/sum(n)) * 100) %>%
+  ungroup() %>%
+  assign_covid_preprint() %>%
+  mutate(license = factor(license,
+                   levels = c("cc0", "cc_by", "cc_by_nc", "cc_by_nd", 
+                              "cc_by_nc_nd", "cc_no", "cc0_ng"),
+                   labels = c("CC0", "CC BY", "CC BY-NC", "CC BY-ND", 
+                              "CC BY-NC-ND", "None", "CC0 NG?"))) %>%
+  ggplot(aes(x = license, y = proportion, fill = covid_preprint)) +
+  geom_col(color = "grey50", position = position_dodge(preserve = "single"), width = 0.75, size = 0.25) +
+  labs(x = "License Type", y = "% of preprints", fill = "") +
+  scale_fill_manual(values = qualitative_hcl(2, palette = "Set2")) +
+  scale_x_discrete(label = function(x) stringr::str_wrap(x, 6)) +
+  guides(fill = FALSE) +
+  ggsave("outputs/figures/partials/Figure_2C_properties.png", width = 5, height = 4)
+
+# Preprint screening time
+
+p2D_properties <- preprints %>%
+  filter(posted_date >= analysis_start,
+         posted_date <= analysis_end) %>%
+  mutate(doi_date = gsub("\\.", "-", substr(doi, 9, 18)),
+         days = as.numeric(ymd(posted_date) - ymd(doi_date)),
+         days = case_when(
+           days > 7 ~ "8+",
+           T ~ as.character(days)),
+         days = factor(days,
+                       levels = c("0", "1", "2", "3", "4", "5", "6", "7", "8+"),
+                       labels = c("0", "1", "2", "3", "4", "5", "6", "7", "8+"))
+  ) %>%
+  count(covid_preprint, days) %>%
+  group_by(covid_preprint) %>%
+  mutate(proportion = (n/sum(n)) * 100) %>%
+  ungroup() %>%
+  assign_covid_preprint() %>%
+  ggplot(aes(x = days, y = proportion,  fill = covid_preprint)) +
+  geom_col(color = "grey50", position = position_dodge(preserve = "single"), 
+           width = 0.75, size = 0.25) +    
+  labs(x = "Screening time (days)", y = "% of preprints", fill = "") +
+  scale_fill_manual(values = qualitative_hcl(2, palette = "Set2")) +
+  guides(fill = FALSE) +
+  ggsave("outputs/figures/partials/Figure_2D_properties.png", width = 5, height = 4)
+
+p <- p2A_properties + p2B_properties + p2C_properties + p2D_properties + 
+  plot_layout(ncol = 2, guides = 'collect') + 
+  plot_annotation(tag_levels = "A") & theme(legend.position = 'bottom')
+
+p + ggsave("outputs/figures/Figure_2_properties.png", width = 10, height = 6) 
+
+```
+
+# Supplementary Figure 2: Preprint properties
+
+```{r}
+
+# Panel A: COVID vs non-COVID preprints for each server
+
+pS2A_properties <- preprints %>%
+  filter(posted_date >= analysis_start,
+         posted_date <= analysis_end) %>%
+  assign_covid_preprint() %>%
+  mutate(posted_month = floor_date(posted_date, unit = "month"),
+         source = factor(source, 
+                         levels = c("biorxiv", "medrxiv"),
+                         labels = c("bioRxiv", "medRxiv"))) %>%
+  count(covid_preprint, source, posted_month) %>%
+  complete(posted_month, nesting(covid_preprint, source), fill = list(n = 0)) %>%
+  ggplot(aes(x = posted_month, y = n, fill = covid_preprint)) +
+  geom_col(color = "grey50", size = 0.25,
+           position = position_dodge(preserve = "single")) +
+  labs(x = "Posted month", y = "Preprints deposited", fill = "") +
+  scale_y_continuous(labels = scales::comma) +
+  scale_x_date(date_breaks = "1 month",
+               date_minor_breaks = "1 month",
+               date_labels = "%b") +
+  scale_fill_manual(values = qualitative_hcl(2, palette = "Set2")) +
+  facet_wrap(. ~ source, nrow = 2, strip.position = "right") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        strip.background = element_rect(color = "grey90", fill = "grey95"),
+        legend.position = "top") +
+  ggsave("outputs/figures/partials/Figure_S2A_properties.png", width = 6, height = 4)
+
+pS2B_properties <- preprints %>%
+  filter(posted_date >= analysis_start,
+         posted_date <= analysis_end) %>%
+  count(covid_preprint, source, n_versions) %>%
+  group_by(covid_preprint, source) %>%
+  mutate(proportion = (n/sum(n)) * 100) %>%
+  ungroup() %>%
+  assign_covid_preprint() %>%
+  ggplot(aes(x = n_versions, y = proportion, fill = covid_preprint)) +
+  geom_col(color = "grey50", position = position_dodge(preserve = "single"), width = 0.75, size = 0.25) +
+  labs(x = "Number of versions", y = "% of preprints", fill = "") +
+  scale_x_continuous(breaks = seq(1:10)) +
+  scale_fill_manual(values = qualitative_hcl(2, palette = "Set2")) +
+  guides(fill = FALSE) +
+  facet_wrap(. ~ source, nrow = 2, strip.position = "right") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        strip.background = element_rect(color = "grey90", fill = "grey95"),
+        legend.position = "top") +
+  ggsave("outputs/figures/partials/Figure_S2B_properties.png", width = 5, height = 4)
+
+pS2C_properties <- preprints %>%
+  filter(posted_date >= analysis_start,
+         posted_date <= analysis_end) %>%
+  mutate(license = case_when(
+    str_detect(license, "cc0") ~ "cc0",
+    T ~ license
+  )) %>%
+  count(covid_preprint, source, license) %>%
+  na.omit() %>%
+  group_by(covid_preprint, source) %>%
+  mutate(proportion = (n/sum(n)) * 100) %>%
+  ungroup() %>%
+  assign_covid_preprint() %>%
+  mutate(license = factor(license,
+                   levels = c("cc0", "cc_by", "cc_by_nc", "cc_by_nd", 
+                              "cc_by_nc_nd", "cc_no", "cc0_ng"),
+                   labels = c("CC0", "CC BY", "CC BY-NC", "CC BY-ND", 
+                              "CC BY-NC-ND", "None", "CC0 NG?"))) %>%
+  ggplot(aes(x = license, y = proportion, fill = covid_preprint)) +
+  geom_col(color = "grey50", position = position_dodge(preserve = "single"), width = 0.75, size = 0.25) +
+  labs(x = "License Type", y = "% of preprints", fill = "") +
+  scale_fill_manual(values = qualitative_hcl(2, palette = "Set2")) +
+  scale_x_discrete(label = function(x) stringr::str_wrap(x, 6)) +
+  guides(fill = FALSE) +
+  facet_wrap(. ~ source, nrow = 2, strip.position = "right") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        strip.background = element_rect(color = "grey90", fill = "grey95"),
+        legend.position = "top") +
+  ggsave("outputs/figures/partials/Figure_S2C_properties.png", width = 5, height = 4)
+
+# Preprint screening time
+
+pS2D_properties <- preprints %>%
+  filter(posted_date >= analysis_start,
+         posted_date <= analysis_end) %>%
+  mutate(doi_date = gsub("\\.", "-", substr(doi, 9, 18)),
+         days = as.numeric(ymd(posted_date) - ymd(doi_date)),
+         days = case_when(
+           days > 7 ~ "8+",
+           T ~ as.character(days)),
+         days = factor(days,
+                       levels = c("0", "1", "2", "3", "4", "5", "6", "7", "8+"),
+                       labels = c("0", "1", "2", "3", "4", "5", "6", "7", "8+"))
+  ) %>%
+  count(covid_preprint, source, days) %>%
+  group_by(covid_preprint, source) %>%
+  mutate(proportion = (n/sum(n)) * 100) %>%
+  ungroup() %>%
+  assign_covid_preprint() %>%
+  ggplot(aes(x = days, y = proportion,  fill = covid_preprint)) +
+  geom_col(color = "grey50", position = position_dodge(preserve = "single"), 
+           width = 0.75, size = 0.25) +    
+  labs(x = "Screening time (days)", y = "% of preprints", fill = "") +
+  scale_fill_manual(values = qualitative_hcl(2, palette = "Set2")) +
+  guides(fill = FALSE) +
+  facet_wrap(. ~ source, nrow = 2, strip.position = "right") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        strip.background = element_rect(color = "grey90", fill = "grey95"),
+        legend.position = "top") +
+  ggsave("outputs/figures/partials/Figure_S2D_properties.png", width = 5, height = 4)
+
+pS2 <- pS2A_properties + pS2B_properties + pS2C_properties + pS2D_properties + 
+  plot_layout(ncol = 2, guides = 'collect') + 
+  plot_annotation(tag_levels = "A") & theme(legend.position = 'bottom')
+
+pS2 + ggsave("outputs/figures/Figure_S2_properties.png", width = 10, height = 6) 
+
+```
+
+# Figure 2: Authorships
+
+```{r}
+
+p2A <- preprints %>%
+  filter(posted_date >= analysis_start,
+         posted_date <= analysis_end) %>%
+  mutate(n_authors = case_when(
+           n_authors > 10 ~ "11+",
+           T ~ as.character(n_authors)),
+           n_authors = factor(n_authors,
+                              levels = c(as.character(1:10), "11+"),
+                              labels = c(as.character(1:10), "11+"))) %>%
+  count(covid_preprint, n_authors) %>%
+  group_by(covid_preprint) %>%
+  mutate(proportion = (n/sum(n)) * 100) %>%
+  ungroup() %>%
+  assign_covid_preprint() %>%
+  ggplot(aes(x = n_authors, y = proportion, fill = covid_preprint)) +
+  geom_col(color = "grey50", position = position_dodge(preserve = "single"), 
+           width = 0.75, size = 0.25) +
+  labs(x = "Number of authors", y = "% of preprints", fill = "") +
+  scale_fill_manual(values = qualitative_hcl(2, palette = "Set2")) +
+  guides(fill = FALSE) +
+  ggsave("outputs/figures/partials/Figure_2A_authors.png", width = 5, height = 4)
+
+p2B <- preprints %>%
+  filter(posted_date >= analysis_start,
+         posted_date <= analysis_end,
+         !is.na(institution_match_country_code)) %>%
+  count(institution_match_country_code, covid_preprint) %>%
+  mutate(continent = countrycode::countrycode(institution_match_country_code, 
+                                              origin = 'iso2c', destination = 'continent')) %>% 
+  pivot_wider(names_from = covid_preprint, values_from = n) %>%
+  ggplot(aes(x = `TRUE`, y = `FALSE`, label = institution_match_country_code)) +
+  geom_point(aes(color = continent), size = 1.5, alpha = 0.75) +
+  geom_text_repel(force = 3,
+                  segment.color = "grey50",
+                  segment.size = 0.1,
+                  segment.alpha = 0.75,
+                  color = "grey25", 
+                  size = 2) +
+  labs(x = "COVID-19 preprints published",
+       y = "non-COVID-19 preprints published",
+       color = "") +
+  scale_color_manual(values = qualitative_hcl(5, palette = "Set2")) +
+  scale_y_log10() +
+  scale_x_log10() +
+  theme(legend.margin = margin(0, 0, 0, 0),
+        legend.position = "top") +
+  ggsave("outputs/figures/partials/Figure_2B_authors.png", width = 5, height = 4)
+
+p2_authors <- p2A + p2B +
+  plot_layout(ncol = 1, heights = c(1,2)) + 
+  plot_annotation(tag_levels = "A")
+
+p2_authors + ggsave("outputs/figures/Figure_2_authors.png", width = 5, height = 8) 
+
+```
+
+# Supplementary Figure 2: Authorships
+
+```{r}
+# Panel A: Science focus of senior author
+
+# For each author, select their chronologically earliest COVID-19 preprint
+preprint_author_covid <- preprints %>%
+  clean_names() %>%
+  filter(covid_preprint == T) %>% 
+  group_by(author_corresponding) %>%
+  arrange(posted_date) %>%
+  slice(1) %>%
+  select(author_corresponding, category, posted_date) %>%
+  rename(category_covid = category,
+         posted_covid = posted_date)
+
+# For each author, select all their non-COVID-19 preprints
+preprint_author_non_covid <- preprints_all %>%
+  clean_names() %>%
+  filter(covid_preprint == F) %>% 
+  select(author_corresponding, category, posted_date) %>%
+  rename(category_previous = category,
+         posted_previous = posted_date)
+
+# Filter to non-COVID-19 preprints uploaded before the latest COVID-19 preprint and select the chronologically latest
+preprint_author_last <- preprint_author_covid %>%
+  inner_join(preprint_author_non_covid, by = "author_corresponding") %>%
+  filter(posted_covid >= posted_previous) %>%
+  group_by(author_corresponding) %>%
+  arrange(posted_previous) %>%
+  slice(n()) %>%
+  mutate(category_covid = tolower(category_covid),
+         category_previous = tolower(category_previous))
+
+total_cats <- c(preprint_author_last$category_covid, preprint_author_last$category_previous) %>% unique %>% sort
+
+# Plot alluvial diagram
+pS2A_authors <- preprint_author_last %>%
+  mutate(category_covid = factor(category_covid, levels = total_cats),
+         category_previous = factor(category_previous, levels = total_cats)) %>%
+  group_by(category_covid, category_previous) %>%
+  summarize(freq = n()) %>%
+  ungroup() %>%
+  filter(freq >= 10) %>%
+  ggplot(aes(axis1 = category_previous, axis2 = category_covid, y = freq)) +
+  scale_x_discrete(limits = c("Previous", "COVID-19"), 
+                   expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0)) +
+  labs(title = "Preprint categorisation") +
+  geom_alluvium(aes(fill = category_previous), reverse = TRUE) +
+  geom_stratum(reverse = TRUE, color = "grey50") + 
+  geom_text(aes(label = after_stat(stratum)), size = 2.5, stat = "stratum", 
+            reverse = TRUE, color = "grey25") +
+  guides(fill = FALSE) +
+  theme(axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank()) +
+  ggsave("outputs/figures/partials/Figure_S2A_authors.png", width = 5, height = 8)
+
+# Panel B: Country of authors by preprinter history
+
+# Authors of COVID-19 preprints
+covid_authors <- preprints %>% 
+  filter(covid_preprint == T) %>%
+  clean_names() %>%
+  pull(author_corresponding)
+
+# Control authors (authors not in COVID-19 group)
+control_authors <- preprints %>% 
+  filter(covid_preprint == F & !(author_corresponding %in% covid_authors)) %>%
+  clean_names() %>%
+  pull(author_corresponding)
+
+# Determine preprinter history
+preprinter_history <- preprints_all %>%
+  filter(posted_date < "2020-01-01",
+         author_corresponding != "? ?",
+         !is.na(author_corresponding)) %>%
+  clean_names() %>%
+  mutate(author_corresponding = factor(author_corresponding, 
+                                       levels = unique(c(covid_authors, control_authors)))) %>%
+  group_by(author_corresponding, .drop = F) %>%
+  summarize(n = n()) %>%
+  mutate(
+    author_group = case_when(
+      author_corresponding %in% covid_authors ~ "COVID-19 preprints",
+      author_corresponding %in% control_authors ~ "non-COVID-19 preprints"
+    ),
+    preprinter_status = case_when(
+      n == 0 ~ "First-time", 
+      T ~ "Previous")
+    ) %>%
+  distinct(author_corresponding, author_group, preprinter_status)
+
+# Append author locations and calculate proportions for plot
+preprinter_history_proportions <- preprints %>%
+  clean_names() %>%
+  inner_join(preprinter_history, by = "author_corresponding") %>%
+  count(author_group, preprinter_status, institution_match_country_name) %>% 
+  complete(author_group, preprinter_status, institution_match_country_name, 
+           fill = list(n = 0)) %>%
+  group_by(author_group, preprinter_status) %>%
+  mutate(prop = n*100 / sum(n))
+
+countries_to_plot <- preprinter_history_plot %>% 
+  filter(author_group == "non-COVID-19 preprints" & preprinter_status == "Previous") %>% 
+  arrange(-prop) %>% slice(1:15) %>% 
+  pull(institution_match_country_name)
+
+pS2B_authors <- preprinter_history_proportions %>%
+  filter(institution_match_country_name %in% countries_to_plot) %>%
+  ggplot() +
+  geom_bar(mapping = aes(x = institution_match_country_name, y = prop, 
+                         fill = author_group, alpha = preprinter_status), 
+           stat = "identity", position = "dodge", color = "grey50", size = 0.25) + 
+  coord_flip() +
+  scale_x_discrete(limits = rev(countries_to_plot)) +
+  scale_y_continuous(expand = c(0,0)) +
+  facet_wrap(facets = ~author_group) +
+  scale_fill_manual(values = qualitative_hcl(2, palette = "Set2")) +
+  scale_alpha_manual(values = c(1.0, 0.4),
+                     breaks = c("Previous", "First-time")) +
+  labs(x = "Country", y = "% of senior authors") +
+  guides(fill = FALSE) +
+  theme(legend.title = element_blank(),
+        legend.margin=margin(c(0,5,5,5)),
+        legend.position = c(0.8, 0.12),
+        strip.text = element_text(size = 10),
+        legend.text = element_text(size = 10),
+        legend.background = element_rect(fill = "white", color = "grey50")) +
+  ggsave("outputs/figures/partials/Figure_S2B_authors.png", width = 8, height = 5)
+
+# Panel C: Time bwteen first case and first preprint
+
+pS2C_authors <- preprint_timing %>%
+  mutate(continent = countrycode::countrycode(institution_match_country_code, 
+                                              origin = 'iso2c', destination = 'continent')) %>% 
+  filter(!is.na(first_preprint) & !is.na(first_case) & !is.na(continent)) %>%
+  filter(first_case <= "2020-04-30",
+         first_preprint <= "2020-04-30") %>%
+  ggplot(aes(x = first_case, y = first_preprint, label = institution_match_country_code)) +
+  geom_point(aes(color = continent), size=2) +
+  geom_text_repel(force = 5,
+                  segment.color = "grey50",
+                  segment.size = 0.2,
+                  segment.alpha = 0.8,
+                  color = "grey25", 
+                  size = 2.5) +
+  geom_abline(intercept = 0, slope = 1, color = "grey50", lty = "dashed", alpha = 0.5) +
+  labs(x = "Date of first case",
+       y = "Date of first preprint",
+       color = "") +
+  scale_color_manual(values = qualitative_hcl(5, palette = "Set2")) +
+  coord_cartesian(ylim = c(ymd("2020-01-01", "2020-04-30")),
+                  xlim = c(ymd("2020-01-01", "2020-04-30"))) +
+  theme(legend.margin = margin(0, 0, 0, 0),
+        legend.position = "top") +
+  ggsave("outputs/figures/partials/Figure_S2C_authors.png", width = 5, height = 4)
+
+
+layout <- "
+AABB
+AACC
+"
+p <- pS2A_authors + pS2B_authors + pS2C_authors +
+  plot_layout(design = layout) & theme(plot.margin = margin(r = 10))
+
+p + plot_annotation(tag_levels = "A") +
+  ggsave("outputs/figures/Figure_S2_authors.png", width = 10, height = 8) 
+
+```
+
+# Figure 2: Publication outcomes
+
+```{r}
+
+# Panel A: proportions of preprints published over time
+
+p2A_outcomes <- preprints %>% 
+  filter(posted_date >= analysis_start,
+         posted_date <= analysis_end) %>%
+  assign_covid_preprint() %>%
+  mutate(posted_month = floor_date(posted_date, unit = "month"),
+         is_published = !is.na(published_doi)) %>%
+  count(posted_month, covid_preprint, is_published) %>%
+  group_by(posted_month, covid_preprint) %>%
+  mutate(prop = n*100 / sum(n)) %>%
+  ungroup() %>%
+  filter(is_published == T) %>%
+  ggplot(aes(x = posted_month, y = prop, fill = covid_preprint)) +
+  geom_col(color = "grey50", size = 0.25, position = "dodge") +
+  labs(x = "", y = "% of preprints published", fill ="") +
+  scale_fill_manual(values = qualitative_hcl(2, palette = "Set2")) +
+  scale_x_date(date_breaks = "1 month",
+               date_minor_breaks = "1 month",
+               date_labels = "%b") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "top") +
+  ggsave("outputs/figures/partials/Figure_2A_outcomes.png", width = 5, height = 4)
+
+# Panel B: time to publication
+
+p2B_outcomes <- preprints %>%
+  mutate(covid_preprint = case_when(
+    covid_preprint == T ~ "COVID-19 preprints",
+    (covid_preprint == F & posted_date >= "2020-01-01") ~ "non-COVID-19 preprints",
+    T ~ "Preprints 2019")) %>%
+  mutate(pub_bracket = cut(as.numeric(delay_in_days), 
+                           seq(0, 360, by = 10), 
+                           labels=seq(0, 350, by = 10))) %>%
+  group_by(covid_preprint) %>%
+  count(pub_bracket) %>%
+  mutate(prop = n*100 / sum(n)) %>%
+  filter(!is.na(pub_bracket)) %>%
+  ggplot(aes(x = pub_bracket, y = prop, fill=covid_preprint, color=covid_preprint)) +
+  geom_bar(alpha = 0.25, width = 1, size = 0.25, 
+           stat = "identity", position="identity") +
+  scale_x_discrete(breaks = as.character(seq(0, 350, by = 50))) +
+  labs(x = "Time from preprint posting to publication (days)",
+       y = "% of all preprints") +
+  scale_color_manual(values = c(qualitative_hcl(2, palette = "Set2"), "grey60")) +
+  scale_fill_manual(values = c(qualitative_hcl(2, palette = "Set2"), "grey60")) +
+  theme(legend.title = element_blank(),
+        legend.position = "top",
+        legend.text = element_text(size = 8)) +
+  ggsave("outputs/figures/partials/Figure_2B_outcomes.png", width = 5, height = 4)
+
+# Panel C: Journal locations of published papers (top 10)
+
+p2C_outcomes <- preprints %>%
+  filter(covid_preprint == T) %>%
+  count(published_journal) %>%
+  na.omit() %>%
+  arrange(-n) %>%
+  slice(1:10) %>%
+  ggplot(aes(x = reorder(published_journal, -n), y = n)) +
+  geom_col(color = "grey50", fill = qualitative_hcl(n = 1, palette = "Set2"),
+           position = "dodge", size = 0.25) +
+  labs(x = "", y = str_wrap("Number of COVID-19 preprints published", 20), fill = "") +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 25)) +
+  theme(axis.text.x = element_text(size = 8, angle = 45, hjust = 1)) +
+  ggsave("outputs/figures/partials/Figure_2C_outcomes.png", width = 5, height = 4) 
+
+# Panel D: Time to publication by publisher
+
+top_publishers <- preprints %>%
+  filter(covid_preprint == T,
+         posted_date >= analysis_start,
+         posted_date <= analysis_end) %>%
+  count(published_publisher) %>%
+  na.omit() %>%
+  top_n(10, n) %>%
+  pull(published_publisher)
+
+p2D_outcomes <- preprints %>%
+  filter(posted_date >= analysis_start,
+         posted_date <= analysis_end,
+         published_publisher %in% top_publishers) %>%
+  assign_covid_preprint() %>%
+  mutate(published_publisher = factor(published_publisher,
+                               levels = c("American Association for the Advancement of Science (AAAS)",
+                                          "American Society for Microbiology",
+                                          "BMJ",
+                                          "Elsevier BV",
+                                          "Frontiers Media SA",
+                                          "MDPI AG",
+                                          "Oxford University Press (OUP)",
+                                          "Public Library of Science (PLoS)",
+                                          "Springer Science and Business Media LLC",
+                                          "Wiley"),
+                                labels = c("AAAS", "ASM", "BMJ", "Elsevier", "Frontiers", 
+                                           "MDPI", "OUP", "PLoS", "Springer", "Wiley"))) %>%
+  filter(delay_in_days > 0) %>%
+  ggplot(aes(x = published_publisher, y = delay_in_days, color = covid_preprint)) +
+  geom_boxplot(outlier.shape = NA) +
+  geom_jitter(aes(fill = factor(covid_preprint)),
+              shape = 21, size = 0.2, alpha = 0.2,
+              position = position_jitterdodge(jitter.width = 0.5)) + 
+  labs(x = "", y = str_wrap("Time from preprint posting to publication (days)", 30), 
+       fill = "", color = "") +
+  scale_color_manual(values = qualitative_hcl(2, palette = "Set2")) +
+  scale_fill_manual(values = qualitative_hcl(2, palette = "Set2")) +
+  theme(axis.text.x = element_text(size = 10, angle = 45, hjust = 1),
+        legend.position = "top") +
+  guides(fill = FALSE, colour = FALSE) +
+  ggsave("outputs/figures/partials/Figure_2D_outcomes.png", width = 5, height = 4) 
+
+
+p <- p2A_outcomes + p2B_outcomes + p2C_outcomes + p2D_outcomes +
+  plot_layout(ncol = 2)
+
+p + plot_annotation(tag_levels = "A") +
+  ggsave("outputs/figures/Figure_2_outcomes.png", width = 10, height = 8) 
+
+```
+
+---- OLD FIGURES BELOW ------
+
+# Figure 2
 ```{r}
 
 # Panel A: Numbers of COVID vs non-COVID preprints
@@ -849,41 +1433,47 @@ d <- preprint_usage %>%
             pdf_downloads = sum(pdf_downloads)) %>%
   ungroup() %>%
   assign_covid_preprint() %>%
-  mutate(posted_week = floor_date(posted_date, unit = "week", week_start = 1))
+  mutate(posted_month = floor_date(posted_date, unit = "month")) %>%
+  filter(posted_month >= analysis_start,
+         posted_month <= analysis_end)
 
 # Abstract views
 p3A <- d %>%
-  ggplot(aes(x = posted_week, y = abstract_views, color = covid_preprint,
-             group = interaction(posted_week, covid_preprint))) +
-  geom_boxplot(width = 4, outlier.shape = NA, 
-               position = position_dodge(width = 4.5)) +
+  ggplot(aes(x = posted_month, y = abstract_views, color = covid_preprint,
+             group = interaction(posted_month, covid_preprint))) +
   geom_jitter(aes(fill = factor(covid_preprint)),
-              shape = 21, size = 0.2, alpha = 0.2, 
-              position = position_jitterdodge(jitter.width = 2, dodge.width = 4.5)) +
-  labs(x = "Posted Date (week beginning)", y = "Total abstract views", 
+              shape = 21, size = 0.25, alpha = 0.1, 
+              position = position_jitterdodge(jitter.width = 15, dodge.width = 21)) +
+  geom_boxplot(width = 20, outlier.shape = NA, fill = NA,
+               position = position_dodge(width = 21)) +
+  labs(x = "Posted Month", y = "Total abstract views", 
        fill = "", color = "") +
   scale_y_log10(labels = scales::comma, limits = c(1, 1e6), expand = c(0, 0)) +
-  custom_date_scale("2020-01-01", "2020-04-30") +
   scale_color_manual(values = qualitative_hcl(2, palette = "Set2")) +
   scale_fill_manual(values = qualitative_hcl(2, palette = "Set2")) +
+  scale_x_date(date_breaks = "1 month",
+               date_minor_breaks = "1 month",
+               date_labels = "%b") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   ggsave("outputs/figures/partials/Figure_3A.png", width = 10, height = 4)
 
 # PDF downloads
 p3B <- d %>%
-  ggplot(aes(x = posted_week, y = pdf_downloads, color = covid_preprint,
-             group = interaction(posted_week, covid_preprint))) +
-  geom_boxplot(width = 4, outlier.shape = NA, 
-               position = position_dodge(width = 4.5)) +
+  ggplot(aes(x = posted_month, y = pdf_downloads, color = covid_preprint,
+             group = interaction(posted_month, covid_preprint))) +
   geom_jitter(aes(fill = factor(covid_preprint)),
-              shape = 21, size = 0.2, alpha = 0.2, 
-              position = position_jitterdodge(jitter.width = 2, dodge.width = 4.5)) +
-  labs(x = "Posted Date (week beginning)", y = "Total PDF downloads", 
+              shape = 21, size = 0.25, alpha = 0.1, 
+              position = position_jitterdodge(jitter.width = 15, dodge.width = 21)) +
+  geom_boxplot(width = 20, outlier.shape = NA, fill = NA,
+               position = position_dodge(width = 21)) +
+  labs(x = "Posted Month", y = "Total PDF downloads", 
        fill = "", color = "") +
   scale_y_log10(labels = scales::comma, limits = c(1, 1e6), expand = c(0, 0)) +
-  custom_date_scale("2020-01-01", "2020-04-30") +
   scale_color_manual(values = qualitative_hcl(2, palette = "Set2")) +
   scale_fill_manual(values = qualitative_hcl(2, palette = "Set2")) +
+  scale_x_date(date_breaks = "1 month",
+               date_minor_breaks = "1 month",
+               date_labels = "%b") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   ggsave("outputs/figures/partials/Figure_3B.png", width = 10, height = 4)
 
@@ -895,7 +1485,6 @@ p3A + p3B + plot_layout(ncol = 1) +
 ```
 
 # Supplementary Figure 3: Time prior to our study period
-
 ```{r}
 # Panel A: Abstract views (bioRxiv + medRxiv, non-COVID)
 
@@ -907,35 +1496,56 @@ d <- preprint_usage %>%
             abstract_views = sum(abstract_views),
             pdf_downloads = sum(pdf_downloads)) %>%
   ungroup() %>%
-  mutate(posted_week = floor_date(posted_date, unit = "week", week_start = 1))
+  mutate(posted_month = floor_date(posted_date, unit = "month")) %>%
+  filter(posted_date >= "2019-01-01",
+         posted_date <= analysis_end)
 
 pS3A <- d %>%
-  ggplot(aes(x = posted_week, y = abstract_views, group = posted_week)) +
+  ggplot(aes(x = posted_month, y = abstract_views, group = posted_month)) +
   geom_boxplot(outlier.shape = NA) +
-  geom_jitter(shape = 21, size = 0.2, alpha = 0.2) +
-  annotate("rect", xmin = ymd("2020-01-01"), xmax = ymd("2020-04-30"),
-           ymin = 1, ymax = 1e5, fill = "red", alpha = 0.2) +
-  labs(x = "Posted Date (week beginning)", y = "Total abstract views", 
+  geom_jitter(shape = 21, size = 0.2, alpha = 0.1) +
+  annotate("rect", xmin = ymd("2019-12-15"), xmax = ymd("2020-10-15"),
+           ymin = 1, ymax = 1e5, fill = "red", alpha = 0.1) +
+  labs(x = "Posted Month", y = "Total abstract views", 
        fill = "", color = "") +
   scale_y_log10(labels = scales::comma, limits = c(1, 1e5), expand = c(0, 0)) +
-  custom_date_scale("2019-09-01", "2020-04-30") +
+  scale_x_date(date_breaks = "1 month",
+               date_minor_breaks = "1 month",
+               date_labels = "%b-%y",
+               expand = c(0.01,0.01)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   ggsave("outputs/figures/partials/Figure_S3A.png", width = 10, height = 4)
 
 # Panel B: PDF downloads (bioRxiv + medRxiv, non-COVID)
 
 pS3B <- d %>%
-  ggplot(aes(x = posted_week, y = pdf_downloads, group = posted_week)) +
+  ggplot(aes(x = posted_month, y = pdf_downloads, group = posted_month)) +
   geom_boxplot(outlier.shape = NA) +
-  geom_jitter(shape = 21, size = 0.2, alpha = 0.2) +
-  annotate("rect", xmin = ymd("2020-01-01"), xmax = ymd("2020-04-30"),
-           ymin = 1, ymax = 1e5, fill = "red", alpha = 0.2) +
-  labs(x = "Posted Date (week beginning)", y = "Total PDF downloads", 
+  geom_jitter(shape = 21, size = 0.2, alpha = 0.1) +
+  annotate("rect", xmin = ymd("2019-12-15"), xmax = ymd("2020-10-15"),
+           ymin = 1, ymax = 1e5, fill = "red", alpha = 0.1) +
+  labs(x = "Posted Month", y = "Total PDF downloads", 
        fill = "", color = "") +
   scale_y_log10(labels = scales::comma, limits = c(1, 1e5), expand = c(0, 0)) +
-  custom_date_scale("2019-09-01", "2020-04-30") +
+  scale_x_date(date_breaks = "1 month",
+               date_minor_breaks = "1 month",
+               date_labels = "%b-%y",
+               expand = c(0.01,0.01)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   ggsave("outputs/figures/partials/Figure_S3B.png", width = 10, height = 4)
+
+# Patchwork
+pS3A + pS3B +
+  plot_layout(nrow = 2) +
+  plot_annotation(tag_levels = "A") +
+  ggsave("outputs/figures/Figure_S3.png", width = 10, height = 8)
+
+```
+
+
+```{r}
+
+# Will need to discuss if we add this back to Fig S3 or not
 
 # Panel C: PDF downloads for additional preprint servers
 
