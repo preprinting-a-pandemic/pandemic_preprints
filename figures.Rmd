@@ -69,9 +69,9 @@ analysis_end <- ymd("2020-10-31")
 assign_covid_preprint <- function(d) {
   d %>%
     mutate(covid_preprint = case_when(
-           covid_preprint == T ~ "COVID-19 preprints",
-           covid_preprint == F ~ "non-COVID-19 preprints"
-         ))
+      covid_preprint == T ~ "COVID-19 preprints",
+      covid_preprint == F ~ "non-COVID-19 preprints"
+    ))
 }
 
 # Function for basic cleaning of author names - convert to lowercase, remove whitespace, remove periods after initials
@@ -370,10 +370,10 @@ p2C_properties <- preprints %>%
   ungroup() %>%
   assign_covid_preprint() %>%
   mutate(license = factor(license,
-                   levels = c("cc0", "cc_by", "cc_by_nc", "cc_by_nd", 
-                              "cc_by_nc_nd", "cc_no", "cc0_ng"),
-                   labels = c("CC0", "CC BY", "CC BY-NC", "CC BY-ND", 
-                              "CC BY-NC-ND", "None", "CC0 NG?"))) %>%
+                          levels = c("cc0", "cc_by", "cc_by_nc", "cc_by_nd", 
+                                     "cc_by_nc_nd", "cc_no", "cc0_ng"),
+                          labels = c("CC0", "CC BY", "CC BY-NC", "CC BY-ND", 
+                                     "CC BY-NC-ND", "None", "CC0 NG?"))) %>%
   ggplot(aes(x = license, y = proportion, fill = covid_preprint)) +
   geom_col(color = "grey50", position = position_dodge(preserve = "single"), width = 0.75, size = 0.25) +
   labs(x = "License Type", y = "% of preprints", fill = "") +
@@ -482,10 +482,10 @@ pS2C_properties <- preprints %>%
   ungroup() %>%
   assign_covid_preprint() %>%
   mutate(license = factor(license,
-                   levels = c("cc0", "cc_by", "cc_by_nc", "cc_by_nd", 
-                              "cc_by_nc_nd", "cc_no", "cc0_ng"),
-                   labels = c("CC0", "CC BY", "CC BY-NC", "CC BY-ND", 
-                              "CC BY-NC-ND", "None", "CC0 NG?"))) %>%
+                          levels = c("cc0", "cc_by", "cc_by_nc", "cc_by_nd", 
+                                     "cc_by_nc_nd", "cc_no", "cc0_ng"),
+                          labels = c("CC0", "CC BY", "CC BY-NC", "CC BY-ND", 
+                                     "CC BY-NC-ND", "None", "CC0 NG?"))) %>%
   ggplot(aes(x = license, y = proportion, fill = covid_preprint)) +
   geom_col(color = "grey50", position = position_dodge(preserve = "single"), width = 0.75, size = 0.25) +
   labs(x = "License Type", y = "% of preprints", fill = "") +
@@ -545,11 +545,11 @@ p2A <- preprints %>%
   filter(posted_date >= analysis_start,
          posted_date <= analysis_end) %>%
   mutate(n_authors = case_when(
-           n_authors > 10 ~ "11+",
-           T ~ as.character(n_authors)),
-           n_authors = factor(n_authors,
-                              levels = c(as.character(1:10), "11+"),
-                              labels = c(as.character(1:10), "11+"))) %>%
+    n_authors > 10 ~ "11+",
+    T ~ as.character(n_authors)),
+    n_authors = factor(n_authors,
+                       levels = c(as.character(1:10), "11+"),
+                       labels = c(as.character(1:10), "11+"))) %>%
   count(covid_preprint, n_authors) %>%
   group_by(covid_preprint) %>%
   mutate(proportion = (n/sum(n)) * 100) %>%
@@ -674,7 +674,7 @@ control_authors <- preprints %>%
 
 # Determine preprinter history
 preprinter_history <- preprints_all %>%
-  filter(posted_date < "2020-01-01",
+  filter(posted_date < analysis_start,
          author_corresponding != "? ?",
          !is.na(author_corresponding)) %>%
   clean_names() %>%
@@ -690,13 +690,19 @@ preprinter_history <- preprints_all %>%
     preprinter_status = case_when(
       n == 0 ~ "First-time", 
       T ~ "Previous")
-    ) %>%
-  distinct(author_corresponding, author_group, preprinter_status)
+  ) %>%
+  distinct(author_corresponding, author_group, preprinter_status) %>%
+  filter(author_corresponding %in% (preprints %>% 
+                                      filter(posted_date >= analysis_start,
+                                             posted_date <= analysis_end) %>% 
+                                      clean_names() %>%
+                                      pull(author_corresponding))) # Limit to authors during the study period only
 
 # Append author locations and calculate proportions for plot
 preprinter_history_proportions <- preprints %>%
   clean_names() %>%
   inner_join(preprinter_history, by = "author_corresponding") %>%
+  distinct(author_corresponding, author_group, preprinter_status, institution_match_country_name) %>%
   count(author_group, preprinter_status, institution_match_country_name) %>% 
   complete(author_group, preprinter_status, institution_match_country_name, 
            fill = list(n = 0)) %>%
@@ -731,7 +737,7 @@ pS2B_authors <- preprinter_history_proportions %>%
         legend.background = element_rect(fill = "white", color = "grey50")) +
   ggsave("outputs/figures/partials/Figure_S2B_authors.png", width = 8, height = 5)
 
-# Panel C: Time bwteen first case and first preprint
+# Panel C: Time between first case and first preprint
 
 pS2C_authors <- preprint_timing %>%
   mutate(continent = countrycode::countrycode(institution_match_country_code, 
@@ -803,9 +809,9 @@ p2A_outcomes <- preprints %>%
 
 p2B_outcomes <- preprints %>%
   mutate(covid_preprint = case_when(
-    covid_preprint == T ~ "COVID-19 preprints",
-    (covid_preprint == F & posted_date >= "2020-01-01") ~ "non-COVID-19 preprints",
-    T ~ "Preprints 2019")) %>%
+    (covid_preprint == T & posted_date >= analysis_start & posted_date <= analysis_end) ~ "COVID-19 preprints",
+    (covid_preprint == F & posted_date >= analysis_start & posted_date <= analysis_end) ~ "non-COVID-19 preprints",
+    T ~ "preprints 2019")) %>%
   mutate(pub_bracket = cut(as.numeric(delay_in_days), 
                            seq(0, 360, by = 10), 
                            labels=seq(0, 350, by = 10))) %>%
@@ -859,18 +865,18 @@ p2D_outcomes <- preprints %>%
          published_publisher %in% top_publishers) %>%
   assign_covid_preprint() %>%
   mutate(published_publisher = factor(published_publisher,
-                               levels = c("American Association for the Advancement of Science (AAAS)",
-                                          "American Society for Microbiology",
-                                          "BMJ",
-                                          "Elsevier BV",
-                                          "Frontiers Media SA",
-                                          "MDPI AG",
-                                          "Oxford University Press (OUP)",
-                                          "Public Library of Science (PLoS)",
-                                          "Springer Science and Business Media LLC",
-                                          "Wiley"),
-                                labels = c("AAAS", "ASM", "BMJ", "Elsevier", "Frontiers", 
-                                           "MDPI", "OUP", "PLoS", "Springer", "Wiley"))) %>%
+                                      levels = c("American Association for the Advancement of Science (AAAS)",
+                                                 "American Society for Microbiology",
+                                                 "BMJ",
+                                                 "Elsevier BV",
+                                                 "Frontiers Media SA",
+                                                 "MDPI AG",
+                                                 "Oxford University Press (OUP)",
+                                                 "Public Library of Science (PLoS)",
+                                                 "Springer Science and Business Media LLC",
+                                                 "Wiley"),
+                                      labels = c("AAAS", "ASM", "BMJ", "Elsevier", "Frontiers", 
+                                                 "MDPI", "OUP", "PLoS", "Springer", "Wiley"))) %>%
   filter(delay_in_days > 0) %>%
   ggplot(aes(x = published_publisher, y = delay_in_days, color = covid_preprint)) +
   geom_boxplot(outlier.shape = NA) +
@@ -1000,7 +1006,7 @@ preprinter_history <- preprints_all %>%
     preprinter_status = case_when(
       n == 0 ~ "First-time", 
       T ~ "Previous")
-    )
+  )
 
 # Append author locations and calculate proportions for plot
 preprinter_history_plot <- preprinter_history %>%
@@ -1061,10 +1067,10 @@ p2E <- preprints %>%
   ungroup() %>%
   assign_covid_preprint() %>%
   mutate(license = factor(license,
-                   levels = c("cc0", "cc_by", "cc_by_nc", "cc_by_nd", 
-                              "cc_by_nc_nd", "cc_no", "cc0_ng"),
-                   labels = c("CC0", "CC BY", "CC BY-NC", "CC BY-ND", 
-                              "CC BY-NC-ND", "None", "CC0 NG?"))) %>%
+                          levels = c("cc0", "cc_by", "cc_by_nc", "cc_by_nd", 
+                                     "cc_by_nc_nd", "cc_no", "cc0_ng"),
+                          labels = c("CC0", "CC BY", "CC BY-NC", "CC BY-ND", 
+                                     "CC BY-NC-ND", "None", "CC0 NG?"))) %>%
   ggplot(aes(x = license, y = proportion, fill = covid_preprint)) +
   geom_col(color = "grey50", position = position_dodge(preserve = "single"), width = 0.75, size = 0.25) +
   labs(x = "License Type", y = "% of preprints", fill = "") +
@@ -1359,18 +1365,18 @@ pS2F <- preprints %>%
          published_publisher %in% top_publishers) %>%
   assign_covid_preprint() %>%
   mutate(published_publisher = factor(published_publisher,
-                               levels = c("AME Publishing Company",
-                                          "American Association for the Advancement of Science (AAAS)",
-                                          "American Society for Microbiology",
-                                          "Elsevier BV",
-                                          "Frontiers Media SA",
-                                          "MDPI AG",
-                                          "Oxford University Press (OUP)",
-                                          "Public Library of Science (PLoS)",
-                                          "Springer Science and Business Media LLC",
-                                          "Wiley"),
-                                labels = c("AME", "AAAS", "ASM", "Elsevier", "Frontiers", 
-                                           "MDPI", "OUP", "PLoS", "Springer", "Wiley"))) %>%
+                                      levels = c("AME Publishing Company",
+                                                 "American Association for the Advancement of Science (AAAS)",
+                                                 "American Society for Microbiology",
+                                                 "Elsevier BV",
+                                                 "Frontiers Media SA",
+                                                 "MDPI AG",
+                                                 "Oxford University Press (OUP)",
+                                                 "Public Library of Science (PLoS)",
+                                                 "Springer Science and Business Media LLC",
+                                                 "Wiley"),
+                                      labels = c("AME", "AAAS", "ASM", "Elsevier", "Frontiers", 
+                                                 "MDPI", "OUP", "PLoS", "Springer", "Wiley"))) %>%
   filter(delay_in_days > 0) %>%
   ggplot(aes(x = published_publisher, y = delay_in_days, color = covid_preprint)) +
   geom_boxplot(outlier.shape = NA) +
