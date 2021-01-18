@@ -14,6 +14,68 @@ descriptive_stats <- function(d, colnamestring) {
     ))
 }
 
+# Megatable
+t1 <- preprints %>%
+  filter(posted_date >= analysis_start,
+         posted_date <= analysis_end) %>%
+  group_by(covid_preprint, source) %>%
+  summarise(n = n()) %>%
+  ungroup()
+
+t2 <- preprints %>%
+  filter(posted_date >= analysis_start,
+         posted_date <= analysis_end) %>%
+  mutate(
+    doi_date = gsub("\\.", "-", substr(doi, 9, 18)),
+    days = as.numeric(ymd(posted_date) - ymd(doi_date))
+  ) %>%
+  group_by(covid_preprint, source) %>%
+  summarise_at(.vars = c("days", "n_authors", "n_versions", "n_words", "n_refs"), .funs = funs(
+    stat = paste0(median(., na.rm = TRUE), " (", IQR(., na.rm = TRUE), ")")
+  )) %>%
+  ungroup()
+
+t3 <- preprint_usage %>%
+  inner_join(preprints, by = c("doi", "source")) %>%
+  group_by(doi, source, posted_date, covid_preprint) %>%
+  summarize(
+    full_text_views = sum(full_text_views),
+    abstract_views = sum(abstract_views),
+    pdf_downloads = sum(pdf_downloads)
+  ) %>%
+  ungroup() %>%
+  filter(posted_date >= analysis_start,
+         posted_date <= analysis_end) %>%
+  group_by(covid_preprint, source) %>%
+  summarise_at(.vars = c("abstract_views", "pdf_downloads"), .funs = funs(
+    stat = paste0(median(., na.rm = TRUE), " (", IQR(., na.rm = TRUE), ")")
+  )) %>%
+  ungroup()
+
+t4 <- preprints %>%
+  filter(posted_date >= analysis_start,
+         posted_date <= analysis_end) %>%
+  inner_join(preprint_citations, by = "doi") %>%
+  inner_join(preprint_comments %>% rename(comments = comments_count), by = "doi") %>%
+  inner_join(preprint_altmetrics, by = "doi") %>%
+  group_by(covid_preprint, source) %>%
+  summarise_at(.vars = c("citations", "twitter", "news", "blogs", "wikipedia", "comments"), .funs = funs(
+    stat = paste0(median(., na.rm = TRUE), " (", IQR(., na.rm = TRUE), ")")
+  )) %>%
+  ungroup()
+
+cbind(t1,
+      t2 %>% select(-covid_preprint, -source),
+      t3 %>% select(-covid_preprint, -source),
+      t4 %>% select(-covid_preprint, -source)) %>%
+  assign_covid_preprint() %>%
+  mutate(set = interaction(source, covid_preprint)) %>%
+  select(-covid_preprint, -source) %>% 
+  gather(variable, value, -set) %>% 
+  mutate(variable = factor(variable, levels=unique(variable))) %>%
+  spread(set, value) %>%
+  mutate(variable = gsub("_stat", "", variable)) %>% write.csv("megatable.csv")
+
 
 
 # Figure 2: Preprint attributes
@@ -197,7 +259,8 @@ views_nbmod %>% summary()
 views_nbmod %>% 
   coef() %>% 
   exp
-1 - (views_nbmod %>% coef() %>% .[3] %>% exp() %>% .^30) # Calculate multiplicative rate of views for each subsequent month
+1 - (views_nbmod %>% coef() %>% .[3] %>% exp() %>% .^30) # Calculate multiplicative rate of views for each subsequent month for non-COVID-19 preprints
+1 - (views_nbmod %>% coef() %>% .[3:4] %>% sum %>% exp() %>% .^30) # Calculate multiplicative rate of views for each subsequent month for COVID-19 preprints
 
 # Panel B: PDF downloads
 # Negative binomial regression, downloads ~ preprint type and posting date
@@ -216,7 +279,8 @@ dloads_nbmod %>% summary()
 dloads_nbmod  %>% 
   coef() %>% 
   exp()
-1 - (dloads_nbmod %>% coef() %>% .[3] %>% exp() %>% .^30) # Calculate multiplicative rate of downloads for each subsequent month
+1 - (dloads_nbmod %>% coef() %>% .[3] %>% exp() %>% .^30) # Calculate multiplicative rate of views for each subsequent month for non-COVID-19 preprints
+1 - (dloads_nbmod %>% coef() %>% .[3:4] %>% sum %>% exp() %>% .^30) # Calculate multiplicative rate of views for each subsequent month for COVID-19 preprints
 
 # Figure 4: Preprint usage and sharing
 # Prepare data
@@ -238,7 +302,7 @@ d %>%
   mutate(citationflag = ifelse(citations == 0, "0", "1")) %>%
   with(., table(covid_preprint, citationflag)) %>%
   prop.table(1) * 100
-  
+
 # Negative binomial regression, citations ~ preprint type and posting date
 citations_nbmod <- d %>%
   with(., MASS::glm.nb(citations ~ covid_preprint + serial_date))

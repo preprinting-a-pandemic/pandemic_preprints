@@ -1556,65 +1556,15 @@ pS3A + pS3B +
 
 # Panel C: PDF downloads for additional preprint servers
 
-# Build a search string containing terms related to COVID-19
-search_string_covid <- "coronavirus|covid-19|sars-cov|ncov-2019|2019-ncov|hcov-19|sars-2"
-
-# Read in and process data from other servers
-
-# SSRN
-ssrn_preprints <- read.csv("data/otherservers/ssrn_extract_3_LB.csv", 
-                           stringsAsFactors = FALSE, 
-                           fileEncoding = "UTF-8-BOM") %>%
-  rename_all(~tolower(str_replace_all(.,"\\.|X\\.",""))) %>%
-  group_by(abstract_id, ab_title) %>%
-  summarise(pdf_downloads = sum(total_downloads)) %>%
-  mutate(covid_preprint = case_when(
-    str_detect(ab_title, regex(search_string_covid, ignore_case = TRUE)) ~ T, 
-    T ~ F),
-    source = "SSRN") %>% 
-  ungroup()
-
-# Research Square
-ressquare_titles <- read.csv("data/otherservers/article_data.csv", 
-                             stringsAsFactors = FALSE) %>% 
-  select(article_identity, title)
-
-ressquare_texts <- read.csv("data/otherservers/full_article_text-002.csv",
-                            stringsAsFactors = FALSE) %>%
-  select(article_identity, plain_abstract)
-
-ressquare_preprints <- read.csv("data/otherservers/engagement_by_article_and_date.csv",
-                                stringsAsFactors = FALSE) %>%
-  left_join(ressquare_titles, by = "article_identity") %>%
-  left_join(ressquare_texts, by = "article_identity") %>%
-  group_by(article_identity, title, plain_abstract) %>%
-  summarise(pdf_downloads = sum(downloads)) %>%
-  mutate(covid_preprint = case_when(
-    str_detect(title, regex(search_string_covid, ignore_case = TRUE)) ~ T,
-    str_detect(plain_abstract, regex(search_string_covid, ignore_case = TRUE)) ~ T,
-    T ~ F),
-    source = "Research Square") %>%
-  ungroup()
-
-# Preprints.org
-dotorg_preprints <- read.csv("data/otherservers/2020-01-01-2020-04-30_preprints_dot_org.csv",
-                             stringsAsFactors = FALSE) %>%
-  rename(pdf_downloads = downloads) %>%
-  mutate(covid_preprint = case_when(
-    str_detect(title, regex(search_string_covid, ignore_case = TRUE)) ~ T,
-    str_detect(abstract, regex(search_string_covid, ignore_case = TRUE)) ~ T,
-    T ~ F),
-    source = "Preprints.org")
-
 # Bind into one data frame
-all_server_dloads <- bind_rows(preprints %>%
-                                 filter(posted_date >= "2020-01-01") %>%
-                                 select(source, covid_preprint, doi) %>%
-                                 inner_join(preprint_usage %>% select(doi, pdf_downloads), by = "doi") %>%
-                                 select(-doi),
-                               ssrn_preprints %>% select(source, covid_preprint, pdf_downloads),
-                               ressquare_preprints %>% select(source, covid_preprint, pdf_downloads),
-                               dotorg_preprints %>% select(source, covid_preprint, pdf_downloads))
+all_server_dloads <- bind_rows(preprint_usage %>%
+                                 inner_join(preprints, by = c("doi", "source")) %>%
+                                 group_by(source, doi, posted_date, covid_preprint) %>%
+                                 summarize(pdf_downloads = sum(pdf_downloads)) %>%
+                                 ungroup() %>%
+                                 select(-doi) %>%
+                                 filter(posted_date >= analysis_start & posted_date <= analysis_end) ,
+                               other_server_dloads)
 
 # Generate plot
 pS3C <- all_server_dloads %>%
@@ -1790,14 +1740,12 @@ p4G <- non_covid_corr %>%
 
 # Panels H: Dotplot of proportion of citations that are preprints, per policy doc
 p4H <- policy_docs %>%
-  filter(type == "COVID-19") %>%
+#  filter(type == "COVID-19") %>%
   mutate(preprint_prop = npreprints*100/nrefs,
-         set = case_when(set == "ECDC other docs" ~ "ECDC",
-                         set == "ECDC rapid risk assessment" ~ "ECDC",
-                         set == "ECDC technical reports" ~ "ECDC",
+         set = case_when(set == "ECDC COVID-19 documents" ~ "ECDC",
                          set == "National academy of medicine" ~ "NAM",
                          set == "US committee COVID" ~ "US HSSCC",
-                         set == "WHO scientific brief" ~ "WHO SB",
+                         set == "WHO Scientific Briefs" ~ "WHO SB",
                          set == "UK post" ~ "UK POST")) %>%
   ggplot(aes(x = set, y = preprint_prop)) +
   geom_dotplot(fill = qualitative_hcl(1, palette = "Set2"), color = qualitative_hcl(1, palette = "Set2"), binaxis = "y", binwidth = 1,  stackdir = "center", binpositions="all") +
@@ -1805,7 +1753,7 @@ p4H <- policy_docs %>%
   guides(size = guide_legend(title="total\ncitations")) +
   theme(axis.title.x=element_blank(),
         axis.text.x = element_text(angle = 45, hjust = 1)) +
-  ggsave("outputs/figures/partials/Figure_4H.png", width = 6, height = 3)
+  ggsave("outputs/figures/partials/Figure_4H.png", width = 4, height = 3)
 
 # Patchwork
 # Manually define layout

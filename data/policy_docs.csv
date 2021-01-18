@@ -1,93 +1,82 @@
-type,set,doc,nrefs,nbiorxiv,nmedrxiv,nssrn,nosf,nressquare,narxiv,npreprints
-COVID-19,ECDC other docs,ecdc-01070c6668ef6a1ae356dd61f963e851-e4270a3540cfe718b71ade1a1825bf12.pdf,10,0,0,0,0,0,0,0
-COVID-19,ECDC other docs,ecdc-360d0bd0f1283365a2821c31b1455541-1bdeb9347e35bcca4ba4bbb0cc1b98c0.pdf,64,0,6,0,0,0,0,6
-COVID-19,ECDC other docs,ecdc-a625a897727edd0549220fce73cde0f8-29f6a218e66ee9539d6ee718a314d4b3.pdf,29,0,2,0,0,0,0,2
-COVID-19,ECDC rapid risk assessment,ecdc-08f0497cb2eb2ee1a0c90a0969952481-f051176314db561bafd7b6eb145d34af.pdf,60,0,1,0,0,0,0,1
-COVID-19,ECDC rapid risk assessment,ecdc-1800b50ae61714ff5696067572d0210c-0c0775e4a28ffa330db6f9b8f8d36d54.pdf,50,1,1,0,0,0,0,2
-COVID-19,ECDC rapid risk assessment,ecdc-249476e603c16cfe6367c5d9ba8bde73-e31a186d6ad08bfbcad7533c4307f89d.pdf,75,0,4,0,0,0,0,4
-COVID-19,ECDC rapid risk assessment,ecdc-40c41bec190def6c33fc902eab0157a5-97410072ba9ec9ce6aade3fde860e85d.pdf,70,1,2,0,0,0,0,3
-COVID-19,ECDC rapid risk assessment,ecdc-6a4e4f16ab08dd38b10370192a914168-95dbb8ed28bf03ed147c120e76b233d7.pdf,98,0,8,0,0,1,0,9
-COVID-19,ECDC rapid risk assessment,ecdc-90ef624467ee59949c00d9872f39f9ec-23f96f1fc8749a7b31d1757f5d215870.pdf,8,0,0,0,0,0,0,0
-COVID-19,ECDC rapid risk assessment,ecdc-a4edc4dc1d7489b096d25e53990936a5-4ca8e2d597ef3ac2a6ed840f4ef38f61.pdf,68,0,0,0,0,0,0,0
-COVID-19,ECDC rapid risk assessment,ecdc-d2bad5aa5f9a1432bfdf45584214993f-dc1f8a206416415c5715f7e4acb30d6c.pdf,51,0,0,0,0,0,0,0
-COVID-19,ECDC technical reports,ecdc-13f62bab14d9c548c23a13532ed67fa4-cd3cceb482c8e3267d0b0338b2c33272.pdf,6,0,0,0,0,0,0,0
-COVID-19,ECDC technical reports,ecdc-14e86936772d32a97596bbfc5a1c295c-4e83977fc2b54e9a0442ef88b0a0749f.pdf,10,0,1,0,0,0,0,1
-COVID-19,ECDC technical reports,ecdc-1668b649b892f073df0b6ed9ab2d576f-534d3b97ff083c8548a1eeba1b368e3c.pdf,10,0,0,0,0,0,0,0
-COVID-19,ECDC technical reports,ecdc-1c2dc09d644daf4e8fb89077279a1df4-72c89931e2351b02fe0907f41e7c2511.pdf,27,0,0,0,0,0,0,0
-COVID-19,ECDC technical reports,ecdc-20f4ed8816d371f9401d281cb84e2eb7-e3e65dfe20ceefed4bb435ec71c706b7.pdf,8,0,0,0,0,0,0,0
-COVID-19,ECDC technical reports,ecdc-333fbd22c69b015ae35f537d9f333209-a53cda4e37a878e9f3b057c563d02361.pdf,9,0,0,0,0,0,0,0
-COVID-19,ECDC technical reports,ecdc-357b7c6de7fdb8e0575fd11f0920b69c-33bdceb5aa1d7dcae5791e8e25a3780a.pdf,6,0,0,0,0,0,0,0
-COVID-19,ECDC technical reports,ecdc-4e97fc613d0e20d18d50942664e6423f-794642a652eeee48066040ba9b3fb4c0.pdf,8,0,0,0,0,0,0,0
-COVID-19,ECDC technical reports,ecdc-58359aa20a3879cf8a930b95f71f8ec1-01837683124e59fe8425fdfab87a9770.pdf,17,0,0,0,0,0,0,0
-COVID-19,ECDC technical reports,ecdc-6e164ec5c306aab0bfac13e6fbe46f7e-6eb7cb3d7402baec9980c594f4cc52ac.pdf,35,0,2,0,0,0,0,2
-COVID-19,ECDC technical reports,ecdc-7f0c1dba0e7fd94df998c073b31bbfd0-3a261fc8601aabfd320a0907286152b4.pdf,3,0,0,0,0,0,0,0
-COVID-19,ECDC technical reports,ecdc-800ea47655993cd396a390a9bd7a68b1-642861e70e6770cee4d7478acbbef892.pdf,32,0,0,0,0,0,0,0
-COVID-19,ECDC technical reports,ecdc-88aebd1e9b19c817d89a88f0a9ff1538-62a3f24da727da35e1a10fd4e34fbf48.pdf,11,0,1,0,0,0,0,1
-COVID-19,ECDC technical reports,ecdc-a02a92cd0576f6179b8176edd69eebac-d31f2a3458091454f2470ed0e128db51.pdf,17,0,2,0,0,0,0,2
-COVID-19,ECDC technical reports,ecdc-ae052c1bca4283a65d569e180eec43c5-79d1dabc8f21af56551d478ecea2b309.pdf,6,0,0,0,0,0,0,0
-COVID-19,ECDC technical reports,ecdc-edae6c2d8ee8d3040b6d31edae8ddb48-1062d56720f2ec10a4807a3b20d39663.pdf,7,0,0,0,0,0,0,0
-COVID-19,National academy of medicine,Imperial modelling doc.pdf,18,0,3,0,0,0,0,3
-COVID-19,National academy of medicine,nationalacademymedicine-b061d8b32b5d868ac9f4d8a2561551b6-af83c67a300e9228c7709891392636f8.pdf,1,0,0,0,0,0,0,0
-COVID-19,National academy of medicine,nationalacademymedicine-d4043046954f4cde4e9376540e12ba2c-9eb73920bd01e13ad8ec7b0494a2db80.pdf,1,0,0,0,0,0,0,0
-COVID-19,US committee COVID,committee_repository-a8ab6c1e9bba3bea12ae359da7b07638-2e1532ec7aa7bccad829ce08a8531fa4.pdf,1,0,0,0,0,0,0,0
-COVID-19,US committee COVID,committee_repository-a8ab6c1e9bba3bea12ae359da7b07638-ca1ccc6d8f60a9243d9d4f892fb5a1fc.pdf,1,0,0,0,0,0,0,0
-COVID-19,US committee COVID,committee_repository-ad1929bfd8529be26ab0fcf58f7f10b7-fb535537bcb53c8d4ed50363573b069c.pdf,1,0,0,0,0,0,0,0
-COVID-19,US committee COVID,committee_repository-d43e92024ba896bd8eae65fbb2f44337-9983d844bbc7614281c43e0024ad4be6.pdf,1,0,0,0,0,0,0,0
-COVID-19,US committee COVID,congressionalresearch-76fe45408bad11593f085387859a4180-76fe45408bad11593f085387859a4180.pdf,1,0,0,0,0,0,0,0
-COVID-19,US committee COVID,congressionalresearch-a94943821f1252a7358cab82eaf99da7-a94943821f1252a7358cab82eaf99da7.pdf,1,0,0,0,0,0,0,0
-COVID-19,US committee COVID,congressionalresearch-afeec8c13e77db17df99287fe6c07ceb-afeec8c13e77db17df99287fe6c07ceb.pdf,1,0,0,0,0,0,0,0
-COVID-19,US committee COVID,congressionalresearch-ea8e55cbbcf5c30ea52e7d125c3a799f-ea8e55cbbcf5c30ea52e7d125c3a799f.pdf,1,0,0,0,0,0,0,0
-COVID-19,WHO scientific brief,Advice on the use of point-of-care immunodiagnostic tests for COVID-19.pdf,16,0,5,0,0,0,0,5
-COVID-19,WHO scientific brief,Bacille Calmette-Guérin (BCG) vaccination and COVID-19.pdf,8,0,0,0,0,0,0,0
-COVID-19,WHO scientific brief,COVID-19 and the use of angiotensin-converting enzyme inhibitors and receptor blockers.pdf,16,0,6,0,0,0,0,6
-COVID-19,WHO scientific brief,Criteria for releasing COVID-19 patients from isolation.pdf,43,0,2,0,0,0,0,2
-COVID-19,WHO scientific brief,Immunity passports in the context of COVID-19.pdf,21,2,9,0,0,0,0,11
-COVID-19,WHO scientific brief,Multisystem inflammatory syndrome in children and adolescents temporally related to COVID-19.pdf,15,0,0,0,0,0,0,0
-COVID-19,WHO scientific brief,Off-label use of medicines for COVID-19.pdf,1,0,0,0,0,0,0,0
-COVID-19,WHO scientific brief,Smoking and COVID-19.pdf,44,0,1,0,0,0,0,1
-COVID-19,WHO scientific brief,The use of non-steroidal anti-inflammatory drugs (NSAIDs) in patients with COVID-19.pdf,13,0,0,0,0,0,0,0
-COVID-19,WHO scientific brief,who-5506d7ccc62961f925d8c873c73f00a9-cfa2273836f4abe9b5a50c391b43d04b.pdf,19,0,0,0,0,0,0,0
-COVID-19,UK post,Antibody tests,39,0,3,0,0,1,0,4
-COVID-19,UK post,behavioural interventions,9,0,0,0,0,0,0,0
-COVID-19,UK post,behavioural science insights,12,0,2,0,0,0,0,2
-COVID-19,UK post,Contact tracing apps,50,0,0,0,1,0,0,1
-COVID-19,UK post,covid in children,33,0,4,0,0,0,0,4
-COVID-19,UK post,Current understanding,5,0,0,0,0,0,0,0
-COVID-19,UK post,Face masks,30,0,1,0,0,1,0,2
-COVID-19,UK post,Immunity to COVID-19,11,0,0,0,0,0,0,0
-COVID-19,UK post,international approaches,66,0,0,0,0,0,0,0
-COVID-19,UK post,light switches and clusters,47,0,4,0,0,0,0,4
-COVID-19,UK post,mental health,73,0,1,0,0,0,0,1
-COVID-19,UK post,misinformation,56,0,0,0,0,0,0,0
-COVID-19,UK post,models_1,12,0,5,0,0,0,0,5
-COVID-19,UK post,models_2,13,0,0,0,0,0,0,0
-COVID-19,UK post,models_3,16,0,0,0,0,0,0,0
-COVID-19,UK post,school closures,7,0,0,0,0,0,0,0
-COVID-19,UK post,therapies,44,1,1,1,0,0,0,3
-COVID-19,UK post,vaccines,18,0,0,0,0,0,0,0
-control,ECDC rapid risk assessment,AMR-rapid-risk-assessment-outbreak -of-carbapenemase-producing-Enterobacterales-Lithuania.pdf,28,0,0,0,0,0,0,0
-control,ECDC rapid risk assessment,carbapenem-resistant-enterobacteriaceae-risk-assessment-rev-2.pdf,124,0,0,0,0,0,0,0
-control,ECDC rapid risk assessment,Klebsiella-pneumoniae-resistance-Germany-risk-assessment.pdf,70,0,0,0,0,0,0,0
-control,ECDC rapid risk assessment,Listeria-rapid-outbreak-assessment-NL-BE.pdf,10,0,0,0,0,0,0,0
-control,ECDC rapid risk assessment,RRA-2jul2019-hajj-mass-gathering.pdf,57,0,0,0,0,0,0,0
-control,ECDC rapid risk assessment,RRA-dengue-in-Spain-France_1Oct2019.pdf,38,0,0,0,0,0,0,0
-control,ECDC rapid risk assessment,RRA-Ebola-haemorrhagic-fever-Democratic-Republic-Congo-July-2019.pdf,33,0,0,0,0,0,0,0
-control,ECDC rapid risk assessment,RRA-Lassa-fever-in-the-Netherlands-ex-Sierra-Leone_0.pdf,26,0,0,0,0,0,0,0
-control,ECDC rapid risk assessment,RRA-sexual-transmission-dengue-in-Spain.pdf,26,0,0,0,0,0,0,0
-control,ECDC rapid risk assessment,RRA-Zika-France-16-Oct-2019-corrected.pdf,66,0,0,0,0,0,0,0
-control,ECDC rapid risk assessment,update-6-Ebola-haemorrhagic-fever-DRC-7-August-2019.pdf,35,0,0,0,0,0,0,0
-control,ECDC technical reports,Community-engagement-during-outbreaks-Shiga-toxin-verocytotxin-producing-E-coli-Ireland.pdf,61,0,0,0,0,0,0,0
-control,ECDC technical reports,community-engagement-guidance.pdf,23,0,0,0,0,0,0,0
-control,ECDC technical reports,hepatitis-C-prevalence-surveys-technical-protocol.pdf,131,0,0,0,0,0,0,0
-control,ECDC technical reports,HIV-pre-exposure-prophylaxis-evidence-2019_0.pdf,11,0,0,0,0,0,0,0
-control,ECDC technical reports,norovirus-community-engagement-institutional-collaboration-Iceland-aug-2017.pdf,67,0,0,0,0,0,0,0
-control,ECDC technical reports,vaccine-hesitancy-systematic-scoping-review-social-media.pdf,203,0,0,0,0,0,1,1
-control,UK post,POST-PN-0585.pdf,137,0,0,0,0,0,0,0
-control,UK post,POST-PN-0588.pdf,199,0,0,0,0,0,0,0
-control,UK post,POST-PN-0595.pdf,106,0,0,0,0,0,0,0
-control,UK post,POST-PN-0597.pdf,65,0,0,0,0,0,0,0
-control,UK post,POST-PN-0598.pdf,69,0,0,0,0,0,0,0
-control,UK post,POST-PN-0611.pdf,93,0,0,0,0,0,0,0
-control,UK post,POST-PN-0619.pdf,309,1,0,0,0,0,0,1
-control,UK post,POST-PN-0620.pdf,95,0,0,0,0,0,0,0
-control,UK post,POST-PN-0626.pdf,167,0,0,0,0,0,0,0
+set,doc,nrefs,nbiorxiv,nmedrxiv,narxiv,nssrn,nosf,npreprintsorg,nressquare,npreprints
+ECDC COVID-19 documents,Communicable-disease-threats-report-19-dec-2020.pdf,1,0,0,0,0,0,0,0,0
+ECDC COVID-19 documents,communicable-disease-threats-report-30-december-2020.pdf,1,0,0,0,0,0,0,0,0
+ECDC COVID-19 documents,community-engagement-guidance.pdf,23,0,0,0,0,0,0,0,0
+ECDC COVID-19 documents,covid-19-contact-tracing-public-health-management-third-update.pdf,71,0,8,0,0,0,0,0,8
+ECDC COVID-19 documents,covid-19-guidelines-non-pharmaceutical-interventions-september-2020.pdf,249,0,31,1,3,0,0,0,35
+ECDC COVID-19 documents,COVID-19-in-children-and-the-role-of-school-settings-in-transmission-first-update_0.pdf,193,0,8,0,0,0,0,0,8
+ECDC COVID-19 documents,covid-19-infection-prevention-primary-care-dental-clinics-pharmacy-october-2020.pdf,42,0,1,1,0,0,0,0,2
+ECDC COVID-19 documents,covid-19-rapid-risk-assessment-20200810.pdf,74,0,7,0,1,0,0,1,9
+ECDC COVID-19 documents,covid-19-risk-assessment-increased-transmission-12th-update-september-2020.pdf,113,3,9,0,1,0,0,0,13
+ECDC COVID-19 documents,COVID-19-risk-related-to-spread-of-new-SARS-CoV-2-variants-EU-EEA.pdf,89,1,3,0,0,0,0,0,4
+ECDC COVID-19 documents,covid-19-supply-substances-human-origin-second-update.pdf,160,3,6,0,0,0,0,0,9
+ECDC COVID-19 documents,COVID-19-vaccination-and-prioritisation-strategies.pdf,31,0,0,0,0,0,0,0,0
+ECDC COVID-19 documents,covid-forecasts-modelling-november-2020.pdf,48,0,5,0,0,0,0,0,5
+ECDC COVID-19 documents,Guidance-for-discharge-and-ending-of-isolation-of-people-with-COVID-19.pdf,47,0,5,1,0,0,0,0,6
+ECDC COVID-19 documents,Guidelines_for_COVID-19_testing_and_quarantine_of_air_travellers-12-2020.pdf,48,0,9,0,0,0,0,0,9
+ECDC COVID-19 documents,Health-emergency-preparedness-imported-cases-of-high-consequence-infectious-diseases.pdf,55,0,0,0,0,0,0,0,0
+ECDC COVID-19 documents,Heating-ventilation-air-conditioning-systems-in-the-context-of-COVID-19-first-update.pdf,64,0,3,0,0,0,0,0,3
+ECDC COVID-19 documents,Increase-fatal-cases-of-COVID-19-among-long-term-care-facility-residents.pdf,157,0,1,0,0,0,0,0,1
+ECDC COVID-19 documents,Infection-prevention-and-control-in-healthcare-settings-COVID-19_5th_update.pdf,103,0,3,0,0,0,0,1,4
+ECDC COVID-19 documents,infectious-diseases-transmitted-on-aircrafts-ragida-risk-assessment-guidelines.pdf,17,0,0,0,0,0,0,0,0
+ECDC COVID-19 documents,Key-aspects-regarding-introduction-and-prioritisation-of-COVID-19-vaccination.pdf,24,0,0,0,0,0,0,0,0
+ECDC COVID-19 documents,Options-use-of-rapid-antigen-tests-for-COVID-19_0.pdf,58,1,7,0,0,0,0,0,8
+ECDC COVID-19 documents,Overview-of-EU_EEA-UK-vaccination-deployment-plans.pdf,26,0,0,0,0,0,0,0,0
+ECDC COVID-19 documents,Re-infection-and-viral-shedding-threat-assessment-brief.pdf,44,3,3,0,2,0,0,0,8
+ECDC COVID-19 documents,Risk-assessment-COVID-19-transmission-related-the-end-of-year-festive-season.pdf,63,0,3,1,0,0,0,0,4
+ECDC COVID-19 documents,RRA-COVID-19-EU-EEA-UK-thirteenth-update-23-Oct-2020.pdf,38,0,2,0,0,0,0,0,2
+ECDC COVID-19 documents,RRA-Resurgence-of-reported-cases-of-COVID-19-in-the-EU-EEA.pdf,17,0,0,0,0,0,0,0,0
+ECDC COVID-19 documents,RRA-SARS-CoV-2-in-mink-12-nov-2020.pdf,90,1,2,0,0,0,0,0,3
+ECDC COVID-19 documents,SARS-CoV-2-variant-multiple-spike-protein-mutations-United-Kingdom.pdf,33,2,0,0,0,0,0,0,2
+ECDC COVID-19 documents,TestingStrategy_Objective-Sept-2020.pdf,103,0,5,0,0,0,0,0,5
+WHO Scientific Briefs,WHO-2019-nCoV-Sci_Brief-ACE-I-2020.1-eng.pdf,16,0,6,0,0,0,0,0,6
+WHO Scientific Briefs,WHO-2019-nCoV-Sci_Brief-BCGvaccination-2020.1-eng.pdf,8,0,0,0,0,0,0,0,0
+WHO Scientific Briefs,WHO-2019-nCoV-Sci_Brief-Breastfeeding-2020.1-eng.pdf,18,0,1,0,0,0,0,0,1
+WHO Scientific Briefs,WHO-2019-nCoV-Sci_Brief-Discharge_From_Isolation-2020.1-eng.pdf,43,0,2,0,0,0,0,0,2
+WHO Scientific Briefs,WHO-2019-nCoV-Sci_Brief-EnvironmentalSampling-2020.1-eng.pdf,20,0,5,0,0,0,0,0,5
+WHO Scientific Briefs,WHO-2019-nCoV-Sci_Brief-Immunity_passport-2020.1-eng.pdf,21,2,9,0,0,0,0,0,11
+WHO Scientific Briefs,WHO-2019-nCoV-Sci_Brief-international_travel_testing-2020.1-eng.pdf,27,0,2,0,0,0,0,0,2
+WHO Scientific Briefs,WHO-2019-nCoV-Sci_Brief-Mortality-2020.1-eng.pdf,19,0,0,0,1,0,1,0,2
+WHO Scientific Briefs,WHO-2019-nCoV-Sci_Brief-Multisystem_Syndrome_Children-2020.1-eng.pdf,15,0,0,0,0,0,0,0,0
+WHO Scientific Briefs,WHO-2019-nCoV-Sci_Brief-NSAIDs-2020.1-eng.pdf,13,0,0,0,0,0,0,0,0
+WHO Scientific Briefs,WHO-2019-nCoV-Sci_Brief-Off-label_use-2020.1-eng.pdf,2,0,0,0,0,0,0,0,0
+WHO Scientific Briefs,WHO-2019-nCoV-Sci_Brief-POC_immunodiagnostics-2020.1-eng.pdf,16,0,5,0,0,0,0,0,5
+WHO Scientific Briefs,WHO-2019-nCoV-Sci_Brief-Smoking-2020.2-eng.pdf,43,0,1,0,0,0,0,0,1
+WHO Scientific Briefs,WHO-2019-nCoV-Sci_Brief-Transmission_modes-2020.3-eng.pdf,99,1,10,0,0,0,0,1,12
+UK post,antibody tests,35,0,3,0,0,0,0,1,4
+UK post,august update,37,2,5,0,0,0,0,0,7
+UK post,behaviour,10,0,2,0,0,0,0,0,2
+UK post,behaviour interventions,7,0,0,0,0,0,0,0,0
+UK post,children,124,0,2,0,0,0,0,0,2
+UK post,children update,53,0,4,0,0,0,0,0,4
+UK post,contact tracing,54,0,0,0,0,1,0,0,1
+UK post,covid children,30,0,4,0,0,0,0,0,4
+UK post,Digital divide,88,0,0,0,0,1,0,0,1
+UK post,disadvantage gap,53,0,0,0,0,0,0,0,0
+UK post,distancing,33,0,0,0,0,0,0,0,0
+UK post,domestic abuse,63,0,0,0,0,0,0,0,0
+UK post,ethnic groups,81,0,0,0,0,0,0,1,1
+UK post,exiting lockdown,63,0,0,0,0,0,0,0,0
+UK post,face masks,27,0,1,0,0,0,0,1,2
+UK post,food supply,116,0,0,0,0,0,0,0,0
+UK post,health effects,102,1,3,0,0,0,0,0,4
+UK post,immunity,5,0,0,0,0,0,0,0,0
+UK post,july vaccines,68,0,1,0,0,0,0,0,1
+UK post,lateral flow test,33,0,1,0,0,0,0,0,1
+UK post,mental health,63,0,0,0,0,0,0,0,0
+UK post,mental wellbeing,70,0,1,0,0,0,0,0,1
+UK post,misinformation,53,0,0,0,0,0,0,0,0
+UK post,models 1,10,0,5,0,0,0,0,0,5
+UK post,models 2,10,0,0,0,0,0,0,0,0
+UK post,Models 3,13,0,0,0,0,0,0,0,0
+UK post,occupational risk,49,0,5,0,0,0,0,0,5
+UK post,school closures,5,0,0,0,0,0,0,0,0
+UK post,test accuracy,16,0,0,0,0,0,0,0,0
+UK post,testing,42,0,4,0,0,0,0,0,4
+UK post,therapies,59,1,3,0,1,0,0,0,5
+UK post,trace behaviour,34,0,1,0,0,0,0,0,1
+UK post,tracing apps,72,0,0,1,0,1,0,0,2
+UK post,tracing programmes,104,0,2,0,1,0,0,0,3
+UK post,vaccine approval,61,0,0,0,0,0,0,0,0
+UK post,vaccines,15,0,0,0,0,0,0,0,0
+UK post,Wastewater,64,0,0,0,0,0,0,0,0
