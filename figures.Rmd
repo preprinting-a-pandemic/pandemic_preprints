@@ -409,11 +409,61 @@ p2D_properties <- preprints %>%
   guides(fill = FALSE) +
   ggsave("outputs/figures/partials/Figure_2D_properties.png", width = 5, height = 4)
 
-p <- p2A_properties + p2B_properties + p2C_properties + p2D_properties + 
+# Word counts
+p2E_properties <- preprints %>%
+  filter(posted_date >= analysis_start,
+         posted_date <= analysis_end) %>%
+  mutate(posted_month = floor_date(posted_date, unit = "month")) %>%
+  assign_covid_preprint() %>%
+  ggplot(aes(x = posted_month, y = n_words, color = covid_preprint,
+             group = interaction(posted_month, covid_preprint))) +
+  geom_jitter(aes(fill = factor(covid_preprint)),
+              shape = 21, size = 0.25, alpha = 0.1, 
+              position = position_jitterdodge(jitter.width = 10, dodge.width = 21)) +
+  geom_boxplot(width = 20, outlier.shape = NA, fill = NA,
+               position = position_dodge(width = 21)) +
+  labs(x = "Posted Month", y = "Word counts", 
+       fill = "", color = "") +
+  scale_y_continuous(labels = scales::comma, expand = c(0, 0)) +
+  coord_cartesian(ylim = c(0, 15000)) +
+  scale_color_manual(values = qualitative_hcl(2, palette = "Set2")) +
+  scale_fill_manual(values = qualitative_hcl(2, palette = "Set2")) +
+  scale_x_date(date_breaks = "1 month",
+               date_minor_breaks = "1 month",
+               date_labels = "%b") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  ggsave("outputs/figures/partials/Figure_2E_properties.png", width = 10, height = 4)
+
+# Reference counts
+p2F_properties <- preprints %>%
+  filter(posted_date >= analysis_start,
+         posted_date <= analysis_end) %>%
+  mutate(posted_month = floor_date(posted_date, unit = "month")) %>%
+  assign_covid_preprint() %>%
+  ggplot(aes(x = posted_month, y = n_refs, color = covid_preprint,
+             group = interaction(posted_month, covid_preprint))) +
+  geom_jitter(aes(fill = factor(covid_preprint)),
+              shape = 21, size = 0.25, alpha = 0.1,  
+              position = position_jitterdodge(jitter.width = 10, dodge.width = 21)) +
+  geom_boxplot(width = 20, outlier.shape = NA, fill = NA,
+               position = position_dodge(width = 21)) +
+  labs(x = "Posted Month", y = "Reference counts", 
+       fill = "", color = "") +
+  scale_y_continuous(labels = scales::comma, expand = c(0, 0)) +
+  coord_cartesian(ylim = c(0, 150)) +
+  scale_color_manual(values = qualitative_hcl(2, palette = "Set2")) +
+  scale_fill_manual(values = qualitative_hcl(2, palette = "Set2")) +
+  scale_x_date(date_breaks = "1 month",
+               date_minor_breaks = "1 month",
+               date_labels = "%b") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  ggsave("outputs/figures/partials/Figure_2F_properties.png", width = 10, height = 4)
+
+p <- p2A_properties + p2B_properties + p2C_properties + p2D_properties + p2E_properties + p2F_properties +
   plot_layout(ncol = 2, guides = 'collect') + 
   plot_annotation(tag_levels = "A") & theme(legend.position = 'bottom')
 
-p + ggsave("outputs/figures/Figure_2_properties.png", width = 10, height = 6) 
+p + ggsave("outputs/figures/Figure_2_properties.png", width = 10, height = 10) 
 
 ```
 
@@ -1635,6 +1685,208 @@ pS3A + pS3B + pS3C +
 ```
 
 # Figure 4: Preprint usage and sharing
+
+```{r}
+
+d <- preprints %>%
+  filter(posted_date >= analysis_start,
+         posted_date <= analysis_end) %>%
+  inner_join(preprint_citations, by = "doi") %>%
+  inner_join(preprint_altmetrics, by = "doi") %>%
+  inner_join(preprint_comments, by = "doi") %>%
+  mutate(posted_week = floor_date(posted_date, unit = "week", 
+                                  week_start = 1)) %>%
+  assign_covid_preprint()
+
+plot_main <- function(d, title_y) {
+  
+  d %>%
+    group_by(covid_preprint, posted_week) %>%
+    summarise(prop_cited = sum(is_cited)/n()) %>%
+    ggplot(aes(x = posted_week, y = prop_cited, 
+               color = covid_preprint, fill = covid_preprint)) +
+    geom_line() +
+    geom_point(shape = 21) +
+    labs(x = "Date posted", y = title_y, fill = "", color = "") +
+    scale_y_continuous(labels = scales::percent, limits = c(0,1)) +
+    scale_color_manual(values = qualitative_hcl(2, palette = "Set2")) +
+    scale_fill_manual(values = qualitative_hcl(2, palette = "Set2"))  +
+    guides(fill = FALSE)
+  
+}
+
+plot_inset <- function(d, title_y) {
+  
+  d %>%
+    ggplot(aes(x = covid_preprint, y = metric + 1, color = covid_preprint)) +
+    geom_boxplot(outlier.shape = NA) +
+    geom_jitter(aes(fill = factor(covid_preprint)), shape = 21, 
+                size = 0.25, alpha = 0.2, width = 0.25) +
+    labs(x = "", y = title_y, 
+         fill = "", color = "") +
+    scale_y_log10(labels = scales::comma_format(accuracy = 1), expand = c(0, 0.1)) +
+    scale_color_manual(values = qualitative_hcl(2, palette = "Set2")) +
+    scale_fill_manual(values = qualitative_hcl(2, palette = "Set2")) +
+    scale_x_discrete(label = function(x) str_wrap(x, 12)) +
+    guides(fill = FALSE, color = FALSE) +
+    theme(axis.text.x = element_text(size = 7),
+          axis.text.y = element_text(size = 7),
+          axis.title.y = element_text(size = 7),
+          plot.margin = margin(0,0,0,0),
+          panel.background = element_rect(fill = "white"),
+          panel.border = element_rect(color = "grey75"))
+  
+}
+
+# Citations
+p4A_main <- d %>%
+  mutate(is_cited = as.numeric(citations > 0)) %>%
+  plot_main(title_y = "% of preprints cited")
+p4A_inset <- d %>%
+  mutate(metric = citations) %>%
+  plot_inset(title_y = "Citations")
+p4A <- p4A_main + 
+  annotation_custom(ggplotGrob(p4A_inset), 
+                    xmin = as.Date("2020-06-15"), 
+                    xmax = as.Date("2020-11-07"), 
+                    ymin = 0.4, ymax = 1.04) +
+  ggsave("outputs/figures/partials/Figure_4A.png", width = 5, height = 4)
+
+# Twitter
+p4B_main <- d %>%
+  mutate(is_cited = as.numeric(twitter > 0)) %>%
+  plot_main(title_y = "% of preprints tweeted")
+p4B_inset <- d %>%
+  mutate(metric = twitter) %>%
+  plot_inset(title_y = "Tweets")
+p4B <- p4B_main + 
+  annotation_custom(ggplotGrob(p4B_inset), 
+                    xmin = as.Date("2020-06-01"), 
+                    xmax = as.Date("2020-11-07"), 
+                    ymin = 0.1, ymax = 0.74) +
+  ggsave("outputs/figures/partials/Figure_4B.png", width = 5, height = 4)
+
+# News
+p4C_main <- d %>%
+  mutate(is_cited = as.numeric(news > 0)) %>%
+  plot_main(title_y = "% of preprints mentioned in news")
+p4C_inset <- d %>%
+  mutate(metric = news) %>%
+  plot_inset(title_y = "News")
+p4C <- p4C_main + 
+  annotation_custom(ggplotGrob(p4C_inset), 
+                    xmin = as.Date("2020-06-01"), 
+                    xmax = as.Date("2020-11-07"), 
+                    ymin = 0.4, ymax = 1.04) +
+  ggsave("outputs/figures/partials/Figure_4C.png", width = 5, height = 4)
+
+# Blogs
+p4D_main <- d %>%
+  mutate(is_cited = as.numeric(blogs > 0)) %>%
+  plot_main(title_y = "% of preprints mentioned in blogs")
+p4D_inset <- d %>%
+  mutate(metric = blogs) %>%
+  plot_inset(title_y = "Blogs")
+p4D <- p4D_main + 
+  annotation_custom(ggplotGrob(p4D_inset), 
+                    xmin = as.Date("2020-06-01"), 
+                    xmax = as.Date("2020-11-07"), 
+                    ymin = 0.4, ymax = 1.04) +
+  ggsave("outputs/figures/partials/Figure_4D.png", width = 5, height = 4)
+
+# Wikipedia
+p4E_main <- d %>%
+  mutate(is_cited = as.numeric(wikipedia > 0)) %>%
+  plot_main(title_y = "% of preprints cited in Wikipedia")
+p4E_inset <- d %>%
+  mutate(metric = wikipedia) %>%
+  plot_inset("Wikipedia")
+p4E <- p4E_main + 
+  annotation_custom(ggplotGrob(p4E_inset), 
+                    xmin = as.Date("2020-06-01"), 
+                    xmax = as.Date("2020-11-07"), 
+                    ymin = 0.4, ymax = 1.04) +
+  ggsave("outputs/figures/partials/Figure_4E.png", width = 5, height = 4)
+
+# Comments
+p4F_main <- d %>%
+  mutate(is_cited = as.numeric(comments_count > 0)) %>%
+  plot_main(title_y = "% of preprints commented on")
+p4F_inset <- d %>%
+  mutate(metric = comments_count) %>%
+  plot_inset(title_y = "Comments")
+p4F <- p4F_main + 
+  annotation_custom(ggplotGrob(p4D_inset), 
+                    xmin = as.Date("2020-06-01"), 
+                    xmax = as.Date("2020-11-07"), 
+                    ymin = 0.4, ymax = 1.04) +
+  ggsave("outputs/figures/partials/Figure_4F.png", width = 5, height = 4)
+
+# PCorrelation plots between citations, tweets, news articles, blogs, wikipedia, and comments
+covid_usage <- d %>% 
+  filter(covid_preprint == "COVID-19 preprints") %>%
+  rename(comments = comments_count) %>%
+  select(citations, twitter, news, blogs, wikipedia, comments)
+
+non_covid_usage <- d %>% 
+  filter(covid_preprint == "non-COVID-19 preprints") %>%
+  rename(comments = comments_count) %>%
+  select(citations, twitter, news, blogs, wikipedia, comments)
+
+covid_corr <- correlate(covid_usage, method = "spearman") %>%
+  pivot_longer(citations:comments) %>%
+  rename(rows = rowname,
+         cols = name) %>%
+  filter(str_trunc(rows, 2, ellipsis = "") < str_trunc(cols, 2, ellipsis = ""))
+
+non_covid_corr <- correlate(non_covid_usage, method = "spearman") %>%
+  pivot_longer(citations:comments) %>%
+  rename(rows = rowname,
+         cols = name) %>%
+  filter(str_trunc(rows, 2, ellipsis = "") < str_trunc(cols, 2, ellipsis = ""))
+
+p4G <- covid_corr %>%
+  ggplot(aes(x = rows, y = cols, fill = value)) +
+  geom_tile() +
+  geom_text(aes(label = round(value, 2))) +
+  scale_fill_continuous_sequential(palette = "Reds3", 
+                                   breaks = c(0, 0.5, 1), 
+                                   limits = c(0, 1)) +
+  labs(x = "", y = "", title = "COVID-19 preprints",
+       fill = "Spearman Correlation") +
+  theme(plot.title = element_text(size = 10)) +
+  guides(fill = FALSE) +
+  ggsave("outputs/figures/partials/Figure_4G.png", width = 5, height = 4)
+
+p4H <- non_covid_corr %>%
+  ggplot(aes(x = rows, y = cols, fill = value)) +
+  geom_tile() +
+  geom_text(aes(label = round(value, 2))) +
+  scale_fill_continuous_sequential(palette = "Reds3", 
+                                   breaks = c(0, 0.5, 1), 
+                                   limits = c(0, 1)) +
+  labs(x = "", y = "", title = "non-COVID-19 preprints",
+       fill = "Spearman Correlation") +
+  theme(plot.title = element_text(size = 10)) +
+  guides(fill = FALSE) +
+  ggsave("outputs/figures/partials/Figure_4H.png", width = 5, height = 4)
+
+
+# Patchwork
+p <- p4A + p4B + p4C + p4D + p4E + p4F + p4G + p4H +
+  plot_layout(nrow = 4, guides = 'collect') & theme(legend.position = "top")
+
+p +  plot_annotation(tag_levels = "A") +
+  ggsave("outputs/figures/Figure_4.png", width = 10, height = 13)
+
+```
+
+
+
+
+
+
+
 
 ```{r}
 
