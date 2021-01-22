@@ -310,7 +310,7 @@ pS1B <-journal_articles %>%
   mutate(clean_title = str_squish(tolower(title))) %>%
   # Remove duplicates occuring in the same source by exact title matching
   group_by(clean_title) %>%
-  slice_min(order_by = posted_date, n = 1, with_ties = F) %>%
+  slice_min(order_by = cr_created, n = 1, with_ties = F) %>%
   ungroup() %>%
   count(article_is_oa, cr_created) %>%
   complete(cr_created, nesting(article_is_oa), fill = list(n = 0)) %>%
@@ -861,7 +861,7 @@ p4A <- preprints %>%
                date_labels = "%b") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1),
         legend.position = "top") +
-  ggsave("outputs/figures/partials/Figure_2A_outcomes.png", width = 5, height = 4)
+  ggsave("outputs/figures/partials/Figure_4A.png", width = 5, height = 4)
 
 # Panel B: Journal locations of published papers (top 10)
 p4B <- preprints %>%
@@ -1110,12 +1110,6 @@ pS3C <- all_server_dloads %>%
   scale_fill_manual(values = qualitative_hcl(2, palette = "Set2")) +
   theme(legend.position = "top") + 
   ggsave("outputs/figures/partials/Figure_S3C.png", width = 10, height = 4)
-
-# Patchwork
-pS3A + pS3B + pS3C +
-  plot_layout(nrow = 3) +
-  plot_annotation(tag_levels = "A") +
-  ggsave("outputs/figures/Figure_S3.png", width = 10, height = 10)
 
 ```
 
