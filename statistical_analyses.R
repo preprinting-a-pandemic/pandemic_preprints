@@ -77,7 +77,6 @@ cbind(t1,
   mutate(variable = gsub("_stat", "", variable)) %>% write.csv("megatable.csv")
 
 
-
 # Figure 2: Preprint attributes
 # Panel B: Preprint screening time
 # Descriptive statistics
@@ -124,25 +123,16 @@ preprints %>%
   multcomp::glht(., linfct = multcomp::mcp(int_source_covid_preprint = "Tukey")) %>%
   summary()
 
-# Panel C: Author counts
+# Panel C: Revisions per preprint for COVID vs non-COVID
 # Descriptive statistics
-descriptive_stats(preprints, "n_authors")
+descriptive_stats(preprints, "n_versions")
 # Mann-Whitney test
 preprints %>%
   filter(posted_date >= analysis_start,
          posted_date <= analysis_end) %>%
-  with(., wilcox.test(n_authors ~ covid_preprint))
+  with(., wilcox.test(n_versions ~ covid_preprint))
 
-# Panel D: Author attributes: country, nationality (top 10 countries)
-# Examine first-time preprinters pooling all countries
-preprinter_history %>%
-  with(., table(author_group, preprinter_status)) %>%
-  prop.table(1) * 100
-preprinter_history %>%
-  with(., table(author_group, preprinter_status)) %>%
-  chisq.test()
-
-# Panel E: License types
+# Panel D: License types
 # Chi-squared test of association
 preprints %>%
   filter(posted_date >= analysis_start,
@@ -154,16 +144,7 @@ preprints %>%
   with(., table(license, covid_preprint)) %>%
   chisq.test()
 
-# Panel F: Revisions per preprint for COVID vs non-COVID
-# Descriptive statistics
-descriptive_stats(preprints, "n_versions")
-# Mann-Whitney test
-preprints %>%
-  filter(posted_date >= analysis_start,
-         posted_date <= analysis_end) %>%
-  with(., wilcox.test(n_versions ~ covid_preprint))
-
-# Panel G: Word counts
+# Panel E: Word counts
 # Descriptive statistics
 descriptive_stats(preprints %>% filter(source == "biorxiv"), "n_words")
 # Mann-Whitney test
@@ -173,7 +154,7 @@ preprints %>%
          source == "biorxiv") %>%
   with(., wilcox.test(n_words ~ covid_preprint))
 
-# Panel H: Reference counts
+# Panel F: Reference counts
 # Descriptive statistics
 descriptive_stats(preprints %>% filter(source == "biorxiv"), "n_refs")
 # Mann-Whitney, number of references
@@ -183,7 +164,85 @@ preprints %>%
          source == "biorxiv") %>%
   with(., wilcox.test(n_refs ~ covid_preprint))
 
-# Panel I: Percentage of preprints published
+
+# Figure 3: Preprint authorship
+# Panel A: Author counts
+# Descriptive statistics
+descriptive_stats(preprints, "n_authors")
+# Mann-Whitney test
+preprints %>%
+  filter(posted_date >= analysis_start,
+         posted_date <= analysis_end) %>%
+  with(., wilcox.test(n_authors ~ covid_preprint))
+
+# Panel C: Author attributes: country, nationality (top 10 countries)
+# Examine first-time preprinters pooling all countries
+preprinter_history %>%
+  with(., table(author_group, preprinter_status)) %>%
+  prop.table(1) * 100
+preprinter_history %>%
+  with(., table(author_group, preprinter_status)) %>%
+  chisq.test()
+
+# Individual tests of first-time preprinters by country, only top 15 countries
+options(scipen = 999)
+rcompanion::groupwiseCMH(xtabs(n ~ preprinter_status + author_group + institution_match_country_code,
+                               data = preprinter_history_tabular),
+                         group = 3,
+                         fisher = FALSE,
+                         gtest = FALSE,
+                         chisq = TRUE,
+                         method = "bonferroni",
+                         correct = "none",
+                         digits = 3
+) %>% arrange(adj.p)
+
+# Full statistical test for United States, UK, Germany, India, France, Canada, Italy
+xtabs(n ~ preprinter_status + author_group,
+      data = preprinter_history_tabular %>% filter(institution_match_country_code == "US")) %>%
+  prop.table(2)
+
+xtabs(n ~ preprinter_status + author_group,
+      data = preprinter_history_tabular %>% filter(institution_match_country_code == "GB")) %>%
+  prop.table(2)
+
+xtabs(n ~ preprinter_status + author_group,
+      data = preprinter_history_tabular %>% filter(institution_match_country_code == "DE")) %>%
+  prop.table(2)
+
+xtabs(n ~ preprinter_status + author_group,
+      data = preprinter_history_tabular %>% filter(institution_match_country_code == "IN")) %>%
+  prop.table(2)
+
+xtabs(n ~ preprinter_status + author_group,
+      data = preprinter_history_tabular %>% filter(institution_match_country_code == "FR")) %>%
+  prop.table(2)
+
+xtabs(n ~ preprinter_status + author_group,
+      data = preprinter_history_tabular %>% filter(institution_match_country_code == "CA")) %>%
+  prop.table(2)
+
+xtabs(n ~ preprinter_status + author_group,
+      data = preprinter_history_tabular %>% filter(institution_match_country_code == "IT")) %>%
+  prop.table(2)
+
+xtabs(n ~ preprinter_status + author_group,
+      data = preprinter_history_tabular %>% filter(institution_match_country_code == "CN")) %>%
+  prop.table(2)
+
+# Panel D: First case -> first preprint by location
+# Calculate correlation between first case and first preprint (using calendar days)
+preprint_timing %>%
+  mutate(
+    serial_preprint = (first_preprint - as.Date("2020-01-01")) %>% as.numeric(units = "days"),
+    serial_case = (first_case - as.Date("2020-01-01")) %>% as.numeric(units = "days")
+  ) %>%
+  filter(!is.na(serial_preprint) & !is.na(serial_case)) %>%
+  with(., cor.test(serial_preprint, serial_case, method = "spearman"))
+
+
+# Figure 4: Publication outcomes
+# Percentage of preprints published
 # Percentage values
 preprints %>%
   filter(posted_date >= analysis_start,
@@ -199,7 +258,7 @@ preprints %>%
   with(., table(covid_preprint, is_published)) %>%
   chisq.test()
 
-# Panel J: Publishing timeline
+# Panel C: Publishing timeline
 # Descriptive statistics (including control period Jan - Dec 2019)
 preprints %>%
   mutate(covid_preprint = case_when(
@@ -224,7 +283,63 @@ preprints %>%
          delay_in_days > 0) %>%
   with(., wilcox.test(delay_in_days~covid_preprint))
 
-# Figure 3: Preprint access
+# Panel D: Time to publication for different publishers (top 10)
+top_publishers <- preprints %>%
+  filter(covid_preprint == T,
+         posted_date >= analysis_start,
+         posted_date <= analysis_end) %>%
+  count(published_publisher) %>%
+  na.omit() %>%
+  top_n(10, n) %>%
+  pull(published_publisher)
+
+# Two-way ANOVA, time to publishing ~ preprint type, publisher
+anova_publishers <- preprints %>%
+  filter(posted_date >= analysis_start,
+         posted_date <= analysis_end,
+         published_publisher %in% top_publishers,
+         delay_in_days > 0) %>%
+  assign_covid_preprint() %>% 
+  with(., aov(delay_in_days ~ published_publisher*covid_preprint))
+
+summary(anova_publishers)
+
+# Posthoc contrasts for specific preprint type/publisher combinations
+preprints %>%
+  filter(posted_date >= analysis_start,
+         posted_date <= analysis_end,
+         published_publisher %in% top_publishers,
+         delay_in_days > 0) %>%
+  mutate(published_publisher = factor(published_publisher,
+                                      levels = c("American Association for the Advancement of Science (AAAS)",
+                                                 "American Society for Microbiology",
+                                                 "BMJ",
+                                                 "Elsevier BV",
+                                                 "Frontiers Media SA",
+                                                 "MDPI AG",
+                                                 "Oxford University Press (OUP)",
+                                                 "Public Library of Science (PLoS)",
+                                                 "Springer Science and Business Media LLC",
+                                                 "Wiley"),
+                                      labels = c("AAAS", "ASM", "BMJ", "Elsevier", "Frontiers", 
+                                                 "MDPI", "OUP", "PLoS", "Springer", "Wiley")),
+         int_publisher_covid_preprint = interaction(published_publisher, covid_preprint)) %>%
+  with(., lm(delay_in_days ~ int_publisher_covid_preprint - 1)) %>%
+  multcomp::glht(., linfct = multcomp::mcp(int_publisher_covid_preprint = c(
+    "AAAS.FALSE - AAAS.TRUE = 0", 
+    "ASM.FALSE - ASM.TRUE = 0",
+    "BMJ.FALSE - BMJ.TRUE = 0",
+    "Elsevier.FALSE - Elsevier.TRUE = 0",
+    "Frontiers.FALSE - Frontiers.TRUE = 0",
+    "MDPI.FALSE - MDPI.TRUE = 0",
+    "OUP.FALSE - OUP.TRUE = 0",
+    "PLoS.FALSE - PLoS.TRUE = 0",
+    "Springer.FALSE - Springer.TRUE = 0",
+    "Wiley.FALSE - Wiley.TRUE = 0"))) %>%
+  summary()
+
+
+# Figure 5: Preprint access
 # Panel A: Abstract views
 # Prepare data
 d <- preprint_usage %>%
@@ -283,7 +398,8 @@ dloads_nbmod  %>%
 1 - (dloads_nbmod %>% coef() %>% .[3] %>% exp() %>% .^30) # Calculate multiplicative rate of views for each subsequent month for non-COVID-19 preprints
 1 - (dloads_nbmod %>% coef() %>% .[3:4] %>% sum %>% exp() %>% .^30) # Calculate multiplicative rate of views for each subsequent month for COVID-19 preprints
 
-# Figure 4: Preprint usage and sharing
+
+# Figure 6: Preprint usage
 # Prepare data
 d <- preprints %>%
   filter(posted_date >= analysis_start,
@@ -385,7 +501,7 @@ blogs_nbmod %>%
   exp()
 1 - (blogs_nbmod %>% coef() %>% .[3] %>% exp() %>% .^30) # Calculate multiplicative rate of blogs for each subsequent month
 
-# Panel D2: Wikipedia mentions per preprint (COVID vs non-COVID)
+# Panel E: Wikipedia mentions per preprint (COVID vs non-COVID)
 # Negative binomial regression, wikipedia ~ preprint type and posting date
 wikipedia_nbmod <- d %>%
   with(., MASS::glm.nb(wikipedia ~ covid_preprint + serial_date))
@@ -404,7 +520,7 @@ wikipedia_nbmod %>%
   exp()
 1 - (wikipedia_nbmod %>% coef() %>% .[3] %>% exp() %>% .^30) # Calculate multiplicative rate of wikipedia mentions for each subsequent month
 
-# Panel E: Count of comments per preprint (COVID vs non-COVID)
+# Panel F: Count of comments per preprint (COVID vs non-COVID)
 # Negative binomial regression, comments ~ preprint type and posting date
 comments_nbmod <- d %>%
   with(., MASS::glm.nb(comments ~ covid_preprint + serial_date))
@@ -424,8 +540,6 @@ comments_nbmod %>%
 1 - (comments_nbmod %>% coef() %>% .[3] %>% exp() %>% .^30) # Calculate multiplicative rate of comments for each subsequent month
 
 
-
-
 # Supplementary Figure 1: Number of preprints in relation to previous epidemics (Zika, Ebola)
 # Panel A
 # Chi-square test of association
@@ -433,72 +547,6 @@ bind_rows(covid_counts, ebola_counts, zika_counts) %>%
   spread(epidemic, value = n) %>%
   column_to_rownames("epi_preprint") %>%
   chisq.test()
-
-# Supplementary Figure 2:
-# Panel D: First case -> first preprint by location
-# Calculate correlation between first case and first preprint (using calendar days)
-preprint_timing %>%
-  mutate(
-    serial_preprint = (first_preprint - as.Date("2020-01-01")) %>% as.numeric(units = "days"),
-    serial_case = (first_case - as.Date("2020-01-01")) %>% as.numeric(units = "days")
-  ) %>%
-  filter(!is.na(serial_preprint) & !is.na(serial_case)) %>%
-  with(., cor.test(serial_preprint, serial_case, method = "spearman"))
-
-# Panel F: Time to publication for different publishers (top 10)
-top_publishers <- preprints %>%
-  filter(covid_preprint == T,
-         posted_date >= analysis_start,
-         posted_date <= analysis_end) %>%
-  count(published_publisher) %>%
-  na.omit() %>%
-  top_n(10, n) %>%
-  pull(published_publisher)
-
-# Two-way ANOVA, time to publishing ~ preprint type, publisher
-anova_publishers <- preprints %>%
-  filter(posted_date >= analysis_start,
-         posted_date <= analysis_end,
-         published_publisher %in% top_publishers,
-         delay_in_days > 0) %>%
-  assign_covid_preprint() %>% 
-  with(., aov(delay_in_days ~ published_publisher*covid_preprint))
-
-summary(anova_publishers)
-
-# Posthoc contrasts for specific preprint type/publisher combinations
-preprints %>%
-  filter(posted_date >= analysis_start,
-         posted_date <= analysis_end,
-         published_publisher %in% top_publishers,
-         delay_in_days > 0) %>%
-  mutate(published_publisher = factor(published_publisher,
-                                      levels = c("American Association for the Advancement of Science (AAAS)",
-                                                 "American Society for Microbiology",
-                                                 "BMJ",
-                                                 "Elsevier BV",
-                                                 "Frontiers Media SA",
-                                                 "MDPI AG",
-                                                 "Oxford University Press (OUP)",
-                                                 "Public Library of Science (PLoS)",
-                                                 "Springer Science and Business Media LLC",
-                                                 "Wiley"),
-                                      labels = c("AAAS", "ASM", "BMJ", "Elsevier", "Frontiers", 
-                                                 "MDPI", "OUP", "PLoS", "Springer", "Wiley")),
-         int_publisher_covid_preprint = interaction(published_publisher, covid_preprint)) %>%
-  with(., lm(delay_in_days ~ int_publisher_covid_preprint - 1)) %>%
-  multcomp::glht(., linfct = multcomp::mcp(int_publisher_covid_preprint = c(
-    "AAAS.FALSE - AAAS.TRUE = 0", 
-    "ASM.FALSE - ASM.TRUE = 0",
-    "BMJ.FALSE - BMJ.TRUE = 0",
-    "Elsevier.FALSE - Elsevier.TRUE = 0",
-    "Frontiers.FALSE - Frontiers.TRUE = 0",
-    "MDPI.FALSE - MDPI.TRUE = 0",
-    "OUP.FALSE - OUP.TRUE = 0",
-    "PLoS.FALSE - PLoS.TRUE = 0",
-    "Springer.FALSE - Springer.TRUE = 0",
-    "Wiley.FALSE - Wiley.TRUE = 0"))) %>%
-  summary()
 
 
 # Supplementary Figure 3: Time prior to our study period

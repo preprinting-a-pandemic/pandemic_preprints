@@ -1303,13 +1303,13 @@ non_covid_usage <- d %>%
 
 covid_corr <- correlate(covid_usage, method = "spearman") %>%
   pivot_longer(citations:pdf_downloads) %>%
-  rename(rows = rowname,
+  rename(rows = term,
          cols = name) %>%
   filter(str_trunc(rows, 2, ellipsis = "") < str_trunc(cols, 2, ellipsis = ""))
 
 non_covid_corr <- correlate(non_covid_usage, method = "spearman") %>%
   pivot_longer(citations:pdf_downloads) %>%
-  rename(rows = rowname,
+  rename(rows = term,
          cols = name) %>%
   filter(str_trunc(rows, 2, ellipsis = "") < str_trunc(cols, 2, ellipsis = ""))
 
