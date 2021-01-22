@@ -462,7 +462,7 @@ word_counts_df <- map_dfr(word_counts, ~ tibble(doi = .$result$doi,
 
 ```{r}
 # Merge with other preprint data
-a <- preprints_analysis %>%
+preprints_analysis <- preprints_analysis %>%
   left_join(word_counts_df, by = "doi") %>%
   select(source:n_versions, n_words:n_tables, license:published_journal_is_oa)
   

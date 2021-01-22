@@ -7,6 +7,7 @@ title: "R Notebook"
 ```{r}
 
 library(tidyverse)
+library(rtweet)
 
 ```
 
@@ -131,7 +132,7 @@ preprints %>%
 
 ```
 
-# Full altmetrics (NOTE: should check licensing agreements with Altmetric before making data publicly available)
+# Full altmetrics for preprints (NOTE: should check licensing agreements with Altmetric before making data publicly available)
 
 ```{r}
 
@@ -186,8 +187,6 @@ tweet_ids <- map_dfr(altmetrics_data, getTweetIDs)
 
 ```{r}
 
-library(rtweet)
-
 # Tweets have to be batched into groups of 90,000 - one batch can be queried
 # in every 15-minute period
 iterations <- ceiling(length(tweet_ids$tweet_id) / 90000)
@@ -200,9 +199,26 @@ getTweets <- function(i) {
     ids <- tweet_ids$tweet_id[(((i-1) * 90000) + 1):(i*90000)]
   }
   
-  tweets <- lookup_tweets(ids, parse = T)
+  t_start = Sys.time() # time at start of data collection
   
-  Sys.sleep(900) # 15 minutes
+  tweets <- lookup_tweets(ids, parse = T) %>%
+    select(user_id, status_id, status_url, created_at, screen_name, text, 
+           reply_to_status_id, reply_to_user_id, reply_to_screen_name, is_quote, 
+           is_retweet, favorite_count, retweet_count, quote_count, reply_count, 
+           hashtags, retweet_status_id, retweet_user_id, retweet_text, 
+           retweet_created_at, retweet_retweet_count, followers_count, location, 
+           description)
+  
+  t_end = Sys.time() # time at end of data collection
+  
+  t_next_interval = as.numeric(900 - difftime(t_end, t_start, units = "secs"))
+  
+  # Sleep until next 15-minute interval - add 60 seconds extra buffer to be sure
+  if(t_next_interval > 0) {
+    Sys.sleep(t_next_interval + 60) 
+  } else {
+    Sys.sleep(60)
+  }
   
   return(tweets)
   
@@ -221,15 +237,11 @@ tweet_ids %>%
   # hashtags are in list - convert to a single string
   mutate(hashtags = map_chr(hashtags, ~ str_c(.x, collapse = ", ")),
          created_at = lubridate::date(created_at)) %>%
-  filter(created_at <= "2020-04-30") %>%
-  # select important fields
-  select(doi, user_id, tweet_id, status_url, created_at, screen_name, text, reply_to_status_id,
-         reply_to_user_id, reply_to_screen_name, is_quote, is_retweet, favorite_count,
-         retweet_count, quote_count, reply_count, hashtags, retweet_status_id,
-         retweet_user_id, retweet_text, retweet_created_at, retweet_retweet_count, 
-         followers_count, location, description) %>%
+  # limit tweets to those in our analysis period
+  filter(created_at <= "2020-10-31") %>%
+  # remove duplicates
   distinct() %>%
-  write_csv("data/preprint_tweets_20190901_20200430.csv")
+  write_csv("data/preprint_tweets_20190101_20201031.csv")
 
 ```
 
