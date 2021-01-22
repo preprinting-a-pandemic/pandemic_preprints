@@ -143,7 +143,7 @@ preprinter_history %>%
   chisq.test()
 
 # Panel E: License types
-# Fisher's exact test of association
+# Chi-squared test of association
 preprints %>%
   filter(posted_date >= analysis_start,
          posted_date <= analysis_end) %>%
@@ -151,7 +151,8 @@ preprints %>%
     str_detect(license, "cc0") ~ "cc0",
     T ~ license
   )) %>%
-  with(., fisher.test(license, covid_preprint, simulate.p.value = TRUE, B = 1000))
+  with(., table(license, covid_preprint)) %>%
+  chisq.test()
 
 # Panel F: Revisions per preprint for COVID vs non-COVID
 # Descriptive statistics
