@@ -706,37 +706,46 @@ preprinter_history <- preprints_all %>%
                                       pull(author_corresponding))) # Limit to authors during the study period only
 
 # Append author locations and calculate proportions for plot
-preprinter_history_proportions <- preprints %>%
+preprinter_history_tabular <- preprints %>%
   clean_names() %>%
   inner_join(preprinter_history, by = "author_corresponding") %>%
   distinct(author_corresponding, author_group, preprinter_status, institution_match_country_code) %>%
   count(author_group, preprinter_status, institution_match_country_code) %>% 
   complete(author_group, preprinter_status, institution_match_country_code, 
-           fill = list(n = 0)) %>%
-  group_by(author_group, preprinter_status) %>%
-  mutate(prop = n * 100 / sum(n))
+           fill = list(n = 0))
+
+countries_to_plot <- preprinter_history_tabular %>% 
+  filter(!is.na(institution_match_country_code)) %>% 
+  group_by(institution_match_country_code) %>% 
+  summarise(n = sum(n)) %>% 
+  top_n(15, n) %>% 
+  arrange(-n) %>%
+  pull(institution_match_country_code)
+
+preprinter_history_tabular <- preprinter_history_tabular %>% filter(institution_match_country_code %in% countries_to_plot)
+
+preprinter_history_proportions <- preprinter_history_tabular %>%
+  group_by(author_group, institution_match_country_code) %>%
+  mutate(prop = n*100/sum(n)) 
 
 p3C <- preprinter_history_proportions %>%
-  filter(institution_match_country_code %in% top_n_countries) %>%
   ggplot() +
   geom_bar(mapping = aes(x = institution_match_country_code, y = prop, 
                          fill = author_group, alpha = preprinter_status), 
-           stat = "identity", position = "dodge", color = "grey50", size = 0.25) + 
+           stat = "identity", position = "stack", color = "grey50", size = 0.25) + 
   coord_flip() +
-  scale_x_discrete(limits = rev(top_n_countries)) +
+  scale_x_discrete(limits = rev(countries_to_plot)) +
   scale_y_continuous(expand = c(0,0)) +
-  facet_wrap(facets = ~ author_group) +
+  facet_wrap(facets = ~author_group, scales = "free") +
   scale_fill_manual(values = qualitative_hcl(2, palette = "Set2")) +
   scale_alpha_manual(values = c(1.0, 0.4),
                      breaks = c("Previous", "First-time")) +
-  labs(x = "Country", y = "% of corresponding authors") +
+  labs(x = "Country", y = "Proportion corresponding authors") +
   guides(fill = FALSE) +
   theme(legend.title = element_blank(),
-        legend.margin=margin(c(0,5,5,5)),
-        legend.position = c(0.8, 0.12),
-        strip.text = element_text(size = 10),
-        legend.text = element_text(size = 10),
-        legend.background = element_rect(fill = "white", color = "grey50")) +
+        legend.margin=margin(c(0,0,0,0)),
+        legend.position = "top",
+        plot.margin = margin(0,10,0,0)) +
   ggsave("outputs/figures/partials/Figure_3C.png", width = 8, height = 5)
 
 # Panel D
