@@ -197,38 +197,38 @@ rcompanion::groupwiseCMH(xtabs(n ~ preprinter_status + author_group + institutio
                          digits = 3
 ) %>% arrange(adj.p)
 
-# Full statistical test for United States, UK, Germany, India, France, Canada, Italy
+# Full statistical test for United States, UK, Germany, India, France, Canada, Italy, China
 xtabs(n ~ preprinter_status + author_group,
       data = preprinter_history_tabular %>% filter(institution_match_country_code == "US")) %>%
-  prop.table(2)
+  prop.table(2) %>% round(3)*100
 
 xtabs(n ~ preprinter_status + author_group,
       data = preprinter_history_tabular %>% filter(institution_match_country_code == "GB")) %>%
-  prop.table(2)
+  prop.table(2) %>% round(3)*100
 
 xtabs(n ~ preprinter_status + author_group,
       data = preprinter_history_tabular %>% filter(institution_match_country_code == "DE")) %>%
-  prop.table(2)
+  prop.table(2) %>% round(3)*100
 
 xtabs(n ~ preprinter_status + author_group,
       data = preprinter_history_tabular %>% filter(institution_match_country_code == "IN")) %>%
-  prop.table(2)
+  prop.table(2) %>% round(3)*100
 
 xtabs(n ~ preprinter_status + author_group,
       data = preprinter_history_tabular %>% filter(institution_match_country_code == "FR")) %>%
-  prop.table(2)
+  prop.table(2) %>% round(3)*100
 
 xtabs(n ~ preprinter_status + author_group,
       data = preprinter_history_tabular %>% filter(institution_match_country_code == "CA")) %>%
-  prop.table(2)
+  prop.table(2) %>% round(3)*100
 
 xtabs(n ~ preprinter_status + author_group,
       data = preprinter_history_tabular %>% filter(institution_match_country_code == "IT")) %>%
-  prop.table(2)
+  prop.table(2) %>% round(3)*100
 
 xtabs(n ~ preprinter_status + author_group,
       data = preprinter_history_tabular %>% filter(institution_match_country_code == "CN")) %>%
-  prop.table(2)
+  prop.table(2) %>% round(3)*100
 
 # Panel D: First case -> first preprint by location
 # Calculate correlation between first case and first preprint (using calendar days)
@@ -564,3 +564,66 @@ all_server_dloads %>%
   with(., lm(pdf_downloads ~ int_source_covid_preprint - 1)) %>%
   multcomp::glht(., linfct = multcomp::mcp(int_source_covid_preprint = "Tukey")) %>%
   summary()
+
+# Supplementary Model: Factors associated with word count
+# Specify data (bioRxiv, complete word count)
+d <- preprints %>%
+  filter(posted_date >= analysis_start,
+         posted_date <= analysis_end,
+         source == "biorxiv",
+         n_words != 0,
+         n_refs != 0,
+         !is.na(category),
+         !is.na(institution_match_country_name)) %>%
+  mutate(is_published = !is.na(published_doi),
+         serial_date = (posted_date - as.Date("2020-01-01")) %>%
+           as.numeric(units = "days"))
+
+# # Use top 10 cats/top 15 countries only? - NOT USED
+# top_cats <- d %>% count(category) %>% top_n(10, n) %>% pull(category)
+# top_nats <- d %>% count(institution_match_country_name) %>% top_n(15, n) %>% pull(institution_match_country_name)
+# 
+# #d <- d %>% filter(category %in% top_cats & institution_match_country_name %in% top_nats)
+
+# Set baselines as most common categories
+d <- d %>% mutate(institution_match_country_name = fct_relevel(institution_match_country_name, "United States", after = 0),
+                  category = fct_relevel(category, "neuroscience", after = 0))
+
+# Build mixed-effects regression: all bioRxiv preprints
+library(lme4)
+library(lmerTest)
+
+words_mix <- lmer(n_words ~ (1|category) + (1|institution_match_country_name) + n_authors + is_published*serial_date + covid_preprint, data = d, REML = TRUE)
+summary(words_mix)
+confint(words_mix)
+car::vif(words_mix)
+
+# Calculate intraclass coefficients
+vcov <- words_mix %>% VarCorr(comp=c("Variance", "Std.Dev")) %>% as.data.frame  %>% pull(vcov)
+vcov[1]/sum(vcov)
+vcov[2]/sum(vcov)
+
+# LRTs for random effects
+anova(words_mix, 
+      lmer(formula = update(formula(words_mix), ~ . - (1|category)), data = d))
+
+anova(words_mix, 
+      lmer(formula = update(formula(words_mix), ~ . - (1|institution_match_country_name)), data = d))
+
+# Build mixed-effects regression: published bioRxiv preprints only
+words_pub_mix <- lmer(n_words ~ (1|category) + (1|institution_match_country_name) + n_authors + serial_date + delay_in_days*covid_preprint, data = d %>% filter(delay_in_days > 0), REML = TRUE)
+summary(words_pub_mix)
+confint(words_pub_mix)
+car::vif(words_pub_mix)
+
+# Calculate intraclass coefficients
+vcov <- words_pub_mix %>% VarCorr(comp=c("Variance", "Std.Dev")) %>% as.data.frame  %>% pull(vcov)
+vcov[1]/sum(vcov)
+vcov[2]/sum(vcov)
+
+# LRTs for random effects
+anova(words_pub_mix, 
+      lmer(formula = update(formula(words_pub_mix), ~ . - (1|category)), data = d %>% filter(delay_in_days > 0)))
+
+anova(words_pub_mix, 
+      lmer(formula = update(formula(words_pub_mix), ~ . - (1|institution_match_country_name)), data = d %>% filter(delay_in_days > 0)))
