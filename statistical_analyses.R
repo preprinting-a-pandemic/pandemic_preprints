@@ -14,7 +14,7 @@ descriptive_stats <- function(d, colnamestring) {
     ))
 }
 
-# Megatable
+# Supplementary Table: descriptive statistics by server*preprint type combination
 t1 <- preprints %>%
   filter(posted_date >= analysis_start,
          posted_date <= analysis_end) %>%
@@ -74,7 +74,7 @@ cbind(t1,
   gather(variable, value, -set) %>% 
   mutate(variable = factor(variable, levels=unique(variable))) %>%
   spread(set, value) %>%
-  mutate(variable = gsub("_stat", "", variable)) %>% write.csv("megatable.csv")
+  mutate(variable = gsub("_stat", "", variable)) %>% write.csv("supplementary_table_descriptive_stats.csv")
 
 
 # Figure 2: Preprint attributes
@@ -552,7 +552,18 @@ bind_rows(covid_counts, ebola_counts, zika_counts) %>%
 # Supplementary Figure 3: Time prior to our study period
 # Panel C: PDF downloads for additional preprint servers
 # Two-way ANOVA, downloads ~ preprint type, server (including servers beyond bioRxiv, medRxiv)
-anova_servers <- all_server_dloads %>%
+all_server_dloads_aov <- bind_rows(preprints %>%
+                                     left_join(preprint_usage, by = c("doi", "source")) %>%
+                                     group_by(source, doi, posted_date, covid_preprint) %>%
+                                     summarize(pdf_downloads = sum(pdf_downloads)) %>%
+                                     ungroup() %>%
+                                     select(-doi) %>%
+                                     mutate(pdf_downloads = replace_na(pdf_downloads, 0)),
+                                   other_server_dloads %>%
+                                     mutate(posted_date = as.Date(posted_date, "%d/%m/%Y"))) %>%
+  filter(posted_date >= analysis_start & posted_date <= analysis_end)
+
+anova_servers <- all_server_dloads_aov %>%
   with(., aov(pdf_downloads ~ source * covid_preprint))
 
 summary(anova_servers)

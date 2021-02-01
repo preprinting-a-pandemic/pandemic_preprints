@@ -121,6 +121,9 @@ preprint_comments <- read_csv("data/preprint_comments_20190101_20201031.csv")
 # externally and updated weekly)
 preprints_other <- read_csv("https://raw.githubusercontent.com/nicholasmfraser/covid19_preprints/master/data/covid19_preprints.csv", col_types = "cccccc")
 
+# Usage data from selected other servers (data originally provided by respective servers)
+other_server_dloads <- read_csv("data/other_preprint_servers_20200101_20201031.csv")
+
 # Dataset of journal articles on COVID-19 from Dimensions
 journal_articles <- read_csv("data/journal_articles_20200101_20201031.csv")
 
@@ -745,7 +748,9 @@ p3C <- preprinter_history_proportions %>%
   theme(legend.title = element_blank(),
         legend.margin=margin(c(0,0,0,0)),
         legend.position = "top",
-        plot.margin = margin(0,10,0,0)) +
+        plot.margin = margin(0,10,0,0),
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank()) +
   ggsave("outputs/figures/partials/Figure_3C.png", width = 8, height = 5)
 
 # Panel D
@@ -1080,29 +1085,17 @@ pS3B <- d %>%
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   ggsave("outputs/figures/partials/Figure_S3B.png", width = 10, height = 4)
 
-# Patchwork
-pS3A + pS3B +
-  plot_layout(nrow = 2) +
-  plot_annotation(tag_levels = "A") +
-  ggsave("outputs/figures/Figure_S3.png", width = 10, height = 8)
-
-```
-
-```{r}
-
-# Will need to discuss if we add this back to Fig S3 or not
-
 # Panel C: PDF downloads for additional preprint servers
-
 # Bind into one data frame
 all_server_dloads <- bind_rows(preprint_usage %>%
                                  inner_join(preprints, by = c("doi", "source")) %>%
                                  group_by(source, doi, posted_date, covid_preprint) %>%
                                  summarize(pdf_downloads = sum(pdf_downloads)) %>%
                                  ungroup() %>%
-                                 select(-doi) %>%
-                                 filter(posted_date >= analysis_start & posted_date <= analysis_end) ,
-                               other_server_dloads)
+                                 select(-doi),
+                               other_server_dloads %>%
+                                 mutate(posted_date = as.Date(posted_date, "%d/%m/%Y"))) %>%
+  filter(posted_date >= analysis_start & posted_date <= analysis_end)
 
 # Generate plot
 pS3C <- all_server_dloads %>%
@@ -1114,11 +1107,17 @@ pS3C <- all_server_dloads %>%
               position = position_jitterdodge(jitter.width = 0.5)) + 
   labs(x = "Preprint server", y = "Total PDF downloads", 
        fill = "", color = "") +
-  scale_y_log10(labels = scales::comma, limits = c(1, 1e6), expand = c(0, 0)) +
+  scale_y_log10(labels = scales::comma, limits = c(1, 1e7), expand = c(0, 0)) +
   scale_color_manual(values = qualitative_hcl(2, palette = "Set2")) +
   scale_fill_manual(values = qualitative_hcl(2, palette = "Set2")) +
   theme(legend.position = "top") + 
   ggsave("outputs/figures/partials/Figure_S3C.png", width = 10, height = 4)
+
+# Patchwork
+pS3A + pS3B + pS3C
+  plot_layout(nrow = 3) +
+  plot_annotation(tag_levels = "A") +
+  ggsave("outputs/figures/Figure_S3.png", width = 10, height = 8)
 
 ```
 
