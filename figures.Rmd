@@ -95,8 +95,9 @@ covid <- read_csv("https://raw.githubusercontent.com/datasets/covid-19/master/da
 # our study period (October 2020).
 preprints_all <- read_csv("data/preprints_basic_20131101_20201031.csv")
 
-# Abstracts of all preprints
-preprint_abstracts <- read_csv("data/preprint_abstracts_20131101_20201031.csv")
+# Abstracts of all preprints. Annual files are stored separately due to file 
+# size limits of github - here we read them all and reconstruct a single data frame
+preprint_abstracts <- map_dfr(2013:2020, ~ read_csv(str_c("data/preprint_abstracts_", .x, ".csv")))
 
 # More detailed preprint metadata covering period Sept 2019 - April 2020
 preprints <- read_csv("data/preprints_full_20190101_20201031.csv",

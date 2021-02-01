@@ -128,10 +128,13 @@ preprints %>%
          author_corresponding_institution,  published_doi) %>% 
   write_csv("data/preprints_basic_20131101_20201031.csv")
 
-# Abstracts (separately due to large file sizes)
+# Abstracts (separate annual files due to large file sizes)
 preprints %>%
-  select(doi, abstract) %>%
-  write_csv("data/preprint_abstracts_20131101_20201031.csv")
+  mutate(year = as.character(year(posted_date))) %>%
+  select(doi, abstract, year) %>%
+  distinct() %>%
+  nest(data = !year) %>%
+  pwalk(~ write_csv(x = .y, path = str_c("data/preprint_abstracts_", .x, ".csv")))
 
 ```
 
