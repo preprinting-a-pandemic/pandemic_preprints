@@ -1114,7 +1114,7 @@ pS3C <- all_server_dloads %>%
   ggsave("outputs/figures/partials/Figure_S3C.png", width = 10, height = 4)
 
 # Patchwork
-pS3A + pS3B + pS3C
+pS3A + pS3B + pS3C +
   plot_layout(nrow = 3) +
   plot_annotation(tag_levels = "A") +
   ggsave("outputs/figures/Figure_S3.png", width = 10, height = 8)
