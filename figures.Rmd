@@ -1317,7 +1317,7 @@ p6F <- p6F_main +
 p6G <- policy_docs %>%
 #  filter(type == "COVID-19") %>%
   mutate(preprint_prop = npreprints*100/nrefs,
-         set = case_when(set == "ECDC COVID-19 documents" ~ "ECDC",
+         set = case_when(set == "ECDC" ~ "ECDC",
                          set == "National academy of medicine" ~ "NAM",
                          set == "US committee COVID" ~ "US HSSCC",
                          set == "WHO Scientific Briefs" ~ "WHO SB",
