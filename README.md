@@ -1,4 +1,4 @@
-This repository contains code and datasets for the study "Preprinting the COVID-19 pandemic" (Latest version on bioRxiv: [https://doi.org/10.1101/2020.05.22.111294](https://doi.org/10.1101/2020.05.22.111294)).
+This repository contains code and datasets for the study "The evolving role of preprints in the dissemination of COVID-19 research and their impact on the science communication landscape". [PLOS Biology. 2021;19:e3000959](https://journals.plos.org/plosbiology/article?id=10.1371/journal.pbio.3000959).
 
 [Previous releases](https://github.com/preprinting-a-pandemic/pandemic_preprints/releases) of this repository contain code and datasets related to earlier versions of the study (i.e. release V1.0 corresponds to the [first version of the preprint](https://www.biorxiv.org/content/10.1101/2020.05.22.111294v1)).
 
